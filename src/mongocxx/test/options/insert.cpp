@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
 #include "helpers.hpp"
 
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/options/insert.hpp>
 
@@ -26,5 +26,5 @@ TEST_CASE("insert opts", "[insert][option]") {
     options::insert ins;
 
     CHECK_OPTIONAL_ARGUMENT(ins, bypass_document_validation, true);
-    CHECK_OPTIONAL_ARGUMENT_WITHOUT_EQUALITY(ins, write_concern, write_concern{});
+    CHECK_OPTIONAL_ARGUMENT(ins, write_concern, write_concern{});
 }

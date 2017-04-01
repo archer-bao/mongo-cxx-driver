@@ -12,16 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
 #include "helpers.hpp"
 
 #include <vector>
 
 #include <bsoncxx/stdx/make_unique.hpp>
-
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/logger.hpp>
-#include <mongocxx/private/libmongoc.hpp>
+#include <mongocxx/private/libmongoc.hh>
 #include <mongocxx/stdx.hpp>
 
 namespace {
@@ -31,10 +30,10 @@ class test_log_handler : public logger {
    public:
     using event = std::tuple<log_level, std::string, std::string>;
 
-    test_log_handler(std::vector<event>* events) : _events(events) {
-    }
+    test_log_handler(std::vector<event>* events) : _events(events) {}
 
-    void operator()(log_level level, stdx::string_view domain,
+    void operator()(log_level level,
+                    stdx::string_view domain,
                     stdx::string_view message) noexcept final {
         if (level == log_level::k_error)
             _events->emplace_back(level, std::string(domain), std::string(message));
@@ -57,6 +56,8 @@ TEST_CASE("a user-provided log handler will be used for logging output", "[insta
     std::vector<test_log_handler::event> events;
     mongocxx::instance driver{stdx::make_unique<test_log_handler>(&events)};
 
+    REQUIRE(&mongocxx::instance::current() == &driver);
+
     // The mocking system doesn't play well with varargs functions, so we use a bare
     // mongoc_log call here.
     mongoc_log(::MONGOC_LOG_LEVEL_ERROR, "foo", "bar");
@@ -64,4 +65,9 @@ TEST_CASE("a user-provided log handler will be used for logging output", "[insta
     REQUIRE(events.size() == 1);
     REQUIRE(events[0] == std::make_tuple(log_level::k_error, "foo", "bar"));
 }
+
+TEST_CASE("after destroying a user constructed instance the instance::current method works") {
+    mongocxx::instance::current();
+}
+
 }  // namespace

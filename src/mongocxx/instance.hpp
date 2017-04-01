@@ -26,7 +26,55 @@ class logger;
 ///
 /// Class representing an instance of the MongoDB driver.
 ///
-/// Life cycle: A unique instance of the driver *MUST* be kept around.
+/// The constructor and destructor initialize and shut down the driver, respectively. Therefore, an
+/// instance must be created before using the driver and must remain alive until all other mongocxx
+/// objects are destroyed. After the instance destructor runs, the driver may not be used.
+///
+/// Exactly one instance must be created in a given program. Not constructing an instance or
+/// constructing more than one instance in a program are errors, even if the multiple instances have
+/// non-overlapping lifetimes.
+///
+/// The following is a correct example of using an instance in a program, as the instance is kept
+/// alive for as long as the driver is in use:
+///
+/// \code
+///
+/// #include <mongocxx/client.hpp>
+/// #include <mongocxx/instance.hpp>
+/// #include <mongocxx/uri.hpp>
+///
+/// int main() {
+///     mongocxx::instance inst{};
+///     mongocxx::client conn{mongocxx::uri{}};
+///     ...
+/// }
+///
+/// \endcode
+///
+/// An example of using instance incorrectly might look as follows:
+///
+/// \code
+///
+/// #include <mongocxx/client.hpp>
+/// #include <mongocxx/instance.hpp>
+/// #include <mongocxx/uri.hpp>
+///
+/// client get_client() {
+///     mongocxx::instance inst{};
+///     mongocxx::client conn{mongocxx::uri{}};
+///
+///     return client;
+/// } // ERROR! The instance is no longer alive after this function returns.
+///
+/// int main() {
+///     mongocxx::client conn = get_client();
+///     ...
+/// }
+///
+/// \endcode
+///
+/// For examples of more advanced usage of instance, see
+/// `examples/mongocxx/instance_management.cpp`.
 ///
 class MONGOCXX_API instance {
    public:
@@ -38,6 +86,8 @@ class MONGOCXX_API instance {
     ///
     /// Creates an instance of the driver with a user provided log handler.
     ///  @param logger The logger that the driver will direct log messages to.
+    ///
+    /// @throws mongocxx::logic_error if an instance already exists.
     ///
     instance(std::unique_ptr<logger> logger);
 
@@ -57,10 +107,19 @@ class MONGOCXX_API instance {
     ~instance();
 
     ///
-    /// Returns the current unique instance of the driver. If an
-    /// instance was explicitly created, that will be returned. If no
-    /// instance has yet been created, a default instance will be
-    /// constructed and returned.
+    /// Returns the current unique instance of the driver. If an instance was explicitly created,
+    /// that will be returned. If no instance has yet been created, a default instance will be
+    /// constructed and returned. If a default instance is constructed, its destruction will be
+    /// sequenced according to the rules for the destruction of static local variables at program
+    /// exit (see http://en.cppreference.com/w/cpp/utility/program/exit).
+    ///
+    /// Note that, if you need to configure the instance in any way (e.g. with a logger), you cannot
+    /// use this method to cause the instance to be constructed. You must explicitly create an
+    /// properly configured instance object. You can, however, use this method to obtain that
+    /// configured instance object.
+    ///
+    /// @note This method is intended primarily for test authors, where managing the lifetime of the
+    /// instance w.r.t. the test framework can be problematic.
     ///
     static instance& current();
 

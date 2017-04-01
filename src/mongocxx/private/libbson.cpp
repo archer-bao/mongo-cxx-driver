@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <mongocxx/private/libbson.hpp>
+#include <mongocxx/private/libbson.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -65,8 +65,7 @@ void scoped_bson_t::flag_init() {
     _is_initialized = true;
 }
 
-scoped_bson_t::scoped_bson_t() : _is_initialized(false) {
-}
+scoped_bson_t::scoped_bson_t() : _is_initialized(false) {}
 
 scoped_bson_t::~scoped_bson_t() {
     if (_is_initialized) {

@@ -21,19 +21,18 @@
 #include <mongocxx/exception/error_code.hpp>
 #include <mongocxx/exception/exception.hpp>
 #include <mongocxx/exception/logic_error.hpp>
-#include <mongocxx/exception/private/error_category.hpp>
-#include <mongocxx/private/libmongoc.hpp>
-#include <mongocxx/private/write_concern.hpp>
+#include <mongocxx/exception/private/error_category.hh>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/private/write_concern.hh>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/stdx.hpp>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
 
-write_concern::write_concern() : _impl{stdx::make_unique<impl>(libmongoc::write_concern_new())} {
-}
+write_concern::write_concern() : _impl{stdx::make_unique<impl>(libmongoc::write_concern_new())} {}
 
 write_concern::write_concern(std::unique_ptr<impl>&& implementation) {
     _impl.reset(implementation.release());
@@ -43,8 +42,7 @@ write_concern::write_concern(write_concern&&) noexcept = default;
 write_concern& write_concern::operator=(write_concern&&) noexcept = default;
 
 write_concern::write_concern(const write_concern& other)
-    : _impl(stdx::make_unique<impl>(libmongoc::write_concern_copy(other._impl->write_concern_t))) {
-}
+    : _impl(stdx::make_unique<impl>(libmongoc::write_concern_copy(other._impl->write_concern_t))) {}
 
 write_concern& write_concern::operator=(const write_concern& other) {
     _impl.reset(stdx::make_unique<impl>(libmongoc::write_concern_copy(other._impl->write_concern_t))
@@ -116,7 +114,8 @@ stdx::optional<std::int32_t> write_concern::nodes() const {
 stdx::optional<write_concern::level> write_concern::acknowledge_level() const {
     stdx::optional<write_concern::level> ack_level;
     std::int32_t w = libmongoc::write_concern_get_w(_impl->write_concern_t);
-    if (w >= 1) return stdx::nullopt;
+    if (w >= 1)
+        return stdx::nullopt;
     switch (w) {
         case MONGOC_WRITE_CONCERN_W_UNACKNOWLEDGED:
             return write_concern::level::k_unacknowledged;
@@ -142,6 +141,24 @@ bool write_concern::majority() const {
 
 std::chrono::milliseconds write_concern::timeout() const {
     return std::chrono::milliseconds(libmongoc::write_concern_get_wtimeout(_impl->write_concern_t));
+}
+
+bool MONGOCXX_CALL operator==(const write_concern& lhs, const write_concern& rhs) {
+    return std::forward_as_tuple(lhs.journal(),
+                                 lhs.nodes(),
+                                 lhs.acknowledge_level(),
+                                 lhs.tag(),
+                                 lhs.majority(),
+                                 lhs.timeout()) == std::forward_as_tuple(rhs.journal(),
+                                                                         rhs.nodes(),
+                                                                         rhs.acknowledge_level(),
+                                                                         rhs.tag(),
+                                                                         rhs.majority(),
+                                                                         rhs.timeout());
+}
+
+bool MONGOCXX_CALL operator!=(const write_concern& lhs, const write_concern& rhs) {
+    return !(lhs == rhs);
 }
 
 MONGOCXX_INLINE_NAMESPACE_END

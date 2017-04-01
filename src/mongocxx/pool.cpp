@@ -20,12 +20,12 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/exception/error_code.hpp>
 #include <mongocxx/exception/exception.hpp>
-#include <mongocxx/private/client.hpp>
-#include <mongocxx/private/pool.hpp>
-#include <mongocxx/private/ssl.hpp>
-#include <mongocxx/private/uri.hpp>
+#include <mongocxx/private/client.hh>
+#include <mongocxx/private/pool.hh>
+#include <mongocxx/private/ssl.hh>
+#include <mongocxx/private/uri.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -39,20 +39,21 @@ void pool::_release(client* client) {
 
 pool::~pool() = default;
 
-pool::pool(const uri& uri, stdx::optional<options::ssl> ssl_options)
+pool::pool(const uri& uri, const options::pool& options)
     : _impl{stdx::make_unique<impl>(libmongoc::client_pool_new(uri._impl->uri_t))} {
-#if !defined(MONGOC_ENABLE_SSL)
-    if (uri.ssl() || ssl_options) throw exception{error_code::k_ssl_not_supported};
-#else
-    if (ssl_options) {
+#if defined(MONGOCXX_ENABLE_SSL) && defined(MONGOC_ENABLE_SSL)
+    if (options.client_opts().ssl_opts()) {
         if (!uri.ssl())
             throw exception{error_code::k_invalid_parameter,
                             "cannot set SSL options if 'ssl=true' not in URI"};
 
-        auto mongoc_opts = options::make_ssl_opts(*ssl_options);
+        auto mongoc_opts = options::make_ssl_opts(*options.client_opts().ssl_opts());
         _impl->ssl_options = std::move(mongoc_opts.second);
         libmongoc::client_pool_set_ssl_opts(_impl->client_pool_t, &mongoc_opts.first);
     }
+#else
+    if (uri.ssl() || options.client_opts().ssl_opts())
+        throw exception{error_code::k_ssl_not_supported};
 #endif
 }
 
@@ -63,7 +64,8 @@ pool::entry pool::acquire() {
 
 stdx::optional<pool::entry> pool::try_acquire() {
     auto cli = libmongoc::client_pool_try_pop(_impl->client_pool_t);
-    if (!cli) return stdx::nullopt;
+    if (!cli)
+        return stdx::nullopt;
 
     return pool::entry{new client(cli), [this](client* client) { _release(client); }};
 }

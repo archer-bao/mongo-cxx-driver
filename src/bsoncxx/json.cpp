@@ -25,13 +25,13 @@
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/exception/error_code.hpp>
 #include <bsoncxx/exception/exception.hpp>
-#include <bsoncxx/private/b64_ntop.h>
+#include <bsoncxx/private/b64_ntop.hh>
 #include <bsoncxx/stdx/make_unique.hpp>
 #include <bsoncxx/stdx/string_view.hpp>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/types/value.hpp>
 
-#include <bsoncxx/config/private/prelude.hpp>
+#include <bsoncxx/config/private/prelude.hh>
 
 namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
@@ -44,13 +44,14 @@ void bson_free_deleter(std::uint8_t* ptr) {
 
 }  // namespace
 
-std::string to_json(document::view view) {
+std::string BSONCXX_CALL to_json(document::view view) {
     bson_t bson;
     bson_init_static(&bson, view.data(), view.length());
 
     size_t size;
     auto result = bson_as_json(&bson, &size);
-    if (!result) throw exception(error_code::k_failed_converting_bson_to_json);
+    if (!result)
+        throw exception(error_code::k_failed_converting_bson_to_json);
 
     const auto deleter = [](char* result) { bson_free(result); };
     const std::unique_ptr<char[], decltype(deleter)> cleanup(result, deleter);
@@ -58,12 +59,13 @@ std::string to_json(document::view view) {
     return {result, size};
 }
 
-document::value from_json(stdx::string_view json) {
+document::value BSONCXX_CALL from_json(stdx::string_view json) {
     bson_error_t error;
     bson_t* result =
         bson_new_from_json(reinterpret_cast<const uint8_t*>(json.data()), json.size(), &error);
 
-    if (!result) throw exception(error_code::k_json_parse_failure, error.message);
+    if (!result)
+        throw exception(error_code::k_json_parse_failure, error.message);
 
     std::uint32_t length;
     std::uint8_t* buf = bson_destroy_with_steal(result, true, &length);

@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <bsoncxx/private/itoa.hpp>
+#include <bsoncxx/private/itoa.hh>
 
-#include <bsoncxx/config/private/prelude.hpp>
+#include <bsoncxx/config/private/prelude.hh>
 
 namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
@@ -1054,11 +1054,9 @@ void itoa::init() {
     }
 }
 
-itoa::itoa() : itoa(0) {
-}
+itoa::itoa() : itoa(0) {}
 
-itoa::itoa(const itoa& rhs) : itoa(rhs._val) {
-}
+itoa::itoa(const itoa& rhs) : itoa(rhs._val) {}
 
 itoa& itoa::operator=(const itoa& rhs) {
     _val = rhs._val;

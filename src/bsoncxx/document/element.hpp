@@ -47,6 +47,7 @@ struct b_codewscope;
 struct b_int32;
 struct b_timestamp;
 struct b_int64;
+struct b_decimal128;
 struct b_minkey;
 struct b_maxkey;
 class value;
@@ -146,12 +147,16 @@ class BSONCXX_API element {
     ///
     /// @return the element's type.
     ///
+    /// @throws bsoncxx::exception if this element is invalid.
+    ///
     bsoncxx::type type() const;
 
     ///
     /// Getter for the element's key.
     ///
     /// @return the element's key.
+    ///
+    /// @throws bsoncxx::exception if this element is invalid.
     ///
     stdx::string_view key() const;
 
@@ -318,6 +323,15 @@ class BSONCXX_API element {
     types::b_int64 get_int64() const;
 
     ///
+    /// Getter for elements of the b_decimal128 type.
+    ///
+    /// @throws bsoncxx::exception if this element is not a b_decimal128.
+    ///
+    /// @return the element's value.
+    ///
+    types::b_decimal128 get_decimal128() const;
+
+    ///
     /// Getter for elements of the b_minkey type.
     ///
     /// @throws bsoncxx::exception if this element is not a b_minkey.
@@ -344,11 +358,13 @@ class BSONCXX_API element {
     types::value get_value() const;
 
     ///
-    /// If this element is a document, finds the first element of the document with the provided
-    /// key. If there is no such element, an invalid document::element will be returned. The
-    /// runtime of operator[] is linear in the length of the document.
+    /// If this element is a document, finds the first element of the document
+    /// with the provided key. If there is no such element, an invalid
+    /// document::element will be returned.  The runtime of operator[] is
+    /// linear in the length of the document.
     ///
-    /// @throws bsoncxx::exception if this element is not a document.
+    /// If this element is not a document, an invalid document::element will
+    /// be returned.
     ///
     /// @param key
     ///   The key to search for.
@@ -358,11 +374,13 @@ class BSONCXX_API element {
     element operator[](stdx::string_view key) const;
 
     ///
-    /// If this element is an array, indexes into this BSON array. If the index is out-of-bounds,
-    /// an invalid array::element will be returned. As BSON represents arrays as documents, the
-    /// runtime of operator[] is linear in the length of the array.
+    /// If this element is an array, indexes into this BSON array. If the
+    /// index is out-of-bounds, an invalid array::element will be returned. As
+    /// BSON represents arrays as documents, the runtime of operator[] is
+    /// linear in the length of the array.
     ///
-    /// @throws bsoncxx::exception if this element is not an array.
+    /// If this element is not an array, an invalid array::element will
+    /// be returned.
     ///
     /// @param i
     ///   The index of the element.

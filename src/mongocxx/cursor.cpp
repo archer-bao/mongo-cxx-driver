@@ -22,20 +22,19 @@
 #include <bson.h>
 
 #include <bsoncxx/stdx/make_unique.hpp>
-#include <mongocxx/exception/private/error_category.hpp>
-#include <mongocxx/exception/private/mongoc_error.hpp>
+#include <mongocxx/exception/private/error_category.hh>
+#include <mongocxx/exception/private/mongoc_error.hh>
 #include <mongocxx/exception/query_exception.hpp>
-#include <mongocxx/private/cursor.hpp>
-#include <mongocxx/private/libmongoc.hpp>
+#include <mongocxx/private/cursor.hh>
+#include <mongocxx/private/libmongoc.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
 
-cursor::cursor(void* cursor_ptr)
-    : _impl(stdx::make_unique<impl>(static_cast<mongoc_cursor_t*>(cursor_ptr))) {
-}
+cursor::cursor(void* cursor_ptr, bsoncxx::stdx::optional<cursor::type> cursor_type)
+    : _impl(stdx::make_unique<impl>(static_cast<mongoc_cursor_t*>(cursor_ptr), cursor_type)) {}
 
 cursor::cursor(cursor&&) noexcept = default;
 cursor& cursor::operator=(cursor&&) noexcept = default;
@@ -49,19 +48,20 @@ void cursor::iterator::operator++(int) {
 cursor::iterator& cursor::iterator::operator++() {
     const bson_t* out;
     bson_error_t error;
+
     if (libmongoc::cursor_next(_cursor->_impl->cursor_t, &out)) {
-        _doc = bsoncxx::document::view(bson_get_data(out), out->len);
+        _cursor->_impl->doc = bsoncxx::document::view{bson_get_data(out), out->len};
     } else if (libmongoc::cursor_error(_cursor->_impl->cursor_t, &error)) {
+        _cursor->_impl->mark_dead();
         throw_exception<query_exception>(error);
     } else {
-        _cursor = nullptr;
-    };
+        _cursor->_impl->mark_nothing_left();
+    }
     return *this;
 }
 
 cursor::iterator cursor::begin() {
-    // Maybe this should be an exception somewhere?
-    if (!_impl->cursor_t) {
+    if (_impl->is_dead()) {
         return end();
     }
     return iterator(this);
@@ -72,23 +72,40 @@ cursor::iterator cursor::end() {
 }
 
 cursor::iterator::iterator(cursor* cursor) : _cursor(cursor) {
-    if (cursor) operator++();
+    if (_cursor == nullptr || _cursor->_impl->has_started()) {
+        return;
+    }
+
+    _cursor->_impl->mark_started();
+    operator++();
+}
+
+//
+// An iterator is exhausted if it is the end-iterator (_cursor == nullptr)
+// or if the underlying _cursor is marked exhausted.
+//
+bool cursor::iterator::is_exhausted() const {
+    return !_cursor || _cursor->_impl->is_exhausted();
 }
 
 const bsoncxx::document::view& cursor::iterator::operator*() const {
-    return _doc;
+    return _cursor->_impl->doc;
 }
 
 const bsoncxx::document::view* cursor::iterator::operator->() const {
-    return &_doc;
+    return &_cursor->_impl->doc;
 }
 
-bool operator==(const cursor::iterator& lhs, const cursor::iterator& rhs) {
-    if (lhs._cursor == rhs._cursor) return true;
-    return &lhs == &rhs;
+//
+// Iterators are equal if they point to the same underlying _cursor or if they
+// both are "at the end".  We check for exhaustion first because the most
+// common check is `iter != cursor.end()`.
+//
+bool MONGOCXX_CALL operator==(const cursor::iterator& lhs, const cursor::iterator& rhs) {
+    return ((rhs.is_exhausted() && lhs.is_exhausted()) || (lhs._cursor == rhs._cursor));
 }
 
-bool operator!=(const cursor::iterator& lhs, const cursor::iterator& rhs) {
+bool MONGOCXX_CALL operator!=(const cursor::iterator& lhs, const cursor::iterator& rhs) {
     return !(lhs == rhs);
 }
 

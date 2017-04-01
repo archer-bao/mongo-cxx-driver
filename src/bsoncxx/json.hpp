@@ -22,14 +22,24 @@
 
 #include <bsoncxx/config/prelude.hpp>
 
+///
+/// Top level namespace for MongoDB C++ BSON functionality.
+///
 namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
+
+// Placing this variable between the `BSONCXX_INLINE_NAMESPACE_BEGIN` and the Doxygen documentation
+// for `to_json` suppressed the macro name from being shown as part of the return type in the
+// generated documentation pages.
+extern const bool k_silence_doxygen;
 
 ///
 /// Converts a BSON document to a JSON string.
 ///
 /// @param view
 ///   A valid BSON document.
+///
+/// @throws bsoncxx::exception with error details if the conversion failed.
 ///
 /// @returns A JSON string.
 ///
@@ -43,8 +53,7 @@ BSONCXX_API std::string BSONCXX_CALL to_json(document::view view);
 ///
 /// @returns A document::value if conversion worked.
 ///
-/// @throws A bsoncxx::exception containing error details, if the
-/// conversion failed.
+/// @throws bsoncxx::exception with error details if the conversion failed.
 ///
 BSONCXX_API document::value BSONCXX_CALL from_json(stdx::string_view json);
 

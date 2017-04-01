@@ -18,7 +18,7 @@
 #include <memory>
 
 #include <bsoncxx/stdx/optional.hpp>
-#include <mongocxx/options/ssl.hpp>
+#include <mongocxx/options/pool.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/uri.hpp>
 
@@ -35,7 +35,7 @@ class client;
 /// For interoperability with other MongoDB drivers, the minimum and maximum number of connections
 /// in the pool is configured using the 'minPoolSize' and 'maxPoolSize' connection string options.
 ///
-/// @see http://docs.mongodb.org/manual/reference/connection-string/#connection-string-options
+/// @see https://docs.mongodb.com/master/reference/connection-string/#connection-string-options
 ///
 /// @remark When connecting to a replica set, it is @b much more efficient to use a pool as opposed
 /// to manually constructing @c client objects. The pool will use a single background thread used
@@ -53,10 +53,13 @@ class MONGOCXX_API pool {
     ///
     /// @param mongodb_uri
     ///  A MongoDB URI representing the connection parameters
-    /// @param ssl_options
-    ///  Optional SSL options to use when connecting to the MongoDB deployment.
-    pool(const uri& mongodb_uri = mongocxx::uri(),
-         stdx::optional<options::ssl> ssl_options = stdx::nullopt);
+    /// @param options
+    ///  Options to use when connecting to the MongoDB deployment.
+    ///
+    /// @throws mongocxx::exception if invalid options are provided (whether from the URI or
+    ///  provided client options).
+    explicit pool(const uri& mongodb_uri = mongocxx::uri(),
+                  const options::pool& options = options::pool());
 
     ///
     /// Destroys a pool.
@@ -69,7 +72,7 @@ class MONGOCXX_API pool {
     /// @note The lifetime of any entry object must be a subset of the pool object
     ///  from which it was acquired.
     ///
-    using entry = std::unique_ptr<client, std::function<void(client*)>>;
+    using entry = std::unique_ptr<client, std::function<void MONGOCXX_CALL(client*)>>;
 
     ///
     /// Acquires a client from the pool. The calling thread will block until a connection is

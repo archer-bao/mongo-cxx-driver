@@ -14,7 +14,7 @@
 
 #pragma once
 
-#include <bsoncxx/document/view.hpp>
+#include <bsoncxx/document/view_or_value.hpp>
 #include <bsoncxx/stdx/optional.hpp>
 #include <mongocxx/stdx.hpp>
 #include <mongocxx/write_concern.hpp>
@@ -31,27 +31,6 @@ namespace options {
 class MONGOCXX_API update {
    public:
     ///
-    /// Sets the upsert option.
-    ///
-    /// By default, if no document matches the filter, the update operation does nothing.
-    /// However, by specifying upsert as @c true, this operation either updates matching documents
-    /// or inserts a new document using the update specification if no matching document exists.
-    ///
-    /// @param upsert
-    ///   If set to @c true, creates a new document when no document matches the query criteria.
-    ///   The server-side default is @c false, which does not insert a new document if a match
-    ///   is not found.
-    ///
-    update& upsert(bool upsert);
-
-    ///
-    /// Gets the current value of the upsert option.
-    ///
-    /// @return The optional value of the upsert option.
-    ///
-    const stdx::optional<bool>& upsert() const;
-
-    ///
     /// Sets the bypass_document_validation option.
     /// If true, allows the write to opt-out of document level validation.
     ///
@@ -61,6 +40,10 @@ class MONGOCXX_API update {
     ///
     /// @param bypass_document_validation
     ///   Whether or not to bypass document validation
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
     ///
     update& bypass_document_validation(bool bypass_document_validation);
 
@@ -72,12 +55,67 @@ class MONGOCXX_API update {
     const stdx::optional<bool>& bypass_document_validation() const;
 
     ///
+    /// Sets the collation for this operation.
+    ///
+    /// @param collation
+    ///   The new collation.
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see
+    ///   https://docs.mongodb.com/master/reference/collation/
+    ///
+    update& collation(bsoncxx::document::view_or_value collation);
+
+    ///
+    /// Retrieves the current collation for this operation.
+    ///
+    /// @return
+    ///   The current collation.
+    ///
+    /// @see
+    ///   https://docs.mongodb.com/master/reference/collation/
+    ///
+    const stdx::optional<bsoncxx::document::view_or_value>& collation() const;
+
+    ///
+    /// Sets the upsert option.
+    ///
+    /// By default, if no document matches the filter, the update operation does nothing.
+    /// However, by specifying upsert as @c true, this operation either updates matching documents
+    /// or inserts a new document using the update specification if no matching document exists.
+    ///
+    /// @param upsert
+    ///   If set to @c true, creates a new document when no document matches the query criteria.
+    ///   The server-side default is @c false, which does not insert a new document if a match
+    ///   is not found.
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    update& upsert(bool upsert);
+
+    ///
+    /// Gets the current value of the upsert option.
+    ///
+    /// @return The optional value of the upsert option.
+    ///
+    const stdx::optional<bool>& upsert() const;
+
+    ///
     /// Sets the write_concern for this operation.
     ///
     /// @param wc
     ///   The new write_concern
     ///
-    /// @see http://docs.mongodb.org/manual/core/write-concern/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/core/write-concern/
     ///
     update& write_concern(class write_concern wc);
 
@@ -87,13 +125,14 @@ class MONGOCXX_API update {
     /// @return
     ///   The current write_concern
     ///
-    /// @see http://docs.mongodb.org/manual/core/write-concern/
+    /// @see https://docs.mongodb.com/master/core/write-concern/
     ///
     const stdx::optional<class write_concern>& write_concern() const;
 
    private:
-    stdx::optional<bool> _upsert;
     stdx::optional<bool> _bypass_document_validation;
+    stdx::optional<bsoncxx::document::view_or_value> _collation;
+    stdx::optional<bool> _upsert;
     stdx::optional<class write_concern> _write_concern;
 };
 

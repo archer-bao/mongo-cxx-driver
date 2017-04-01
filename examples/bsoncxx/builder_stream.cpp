@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/types.hpp>
 
@@ -77,8 +77,8 @@ int main(int, char**) {
     bsoncxx::document::value nestedValue = document{} << "nested" << true << finalize;
     document topLevelDoc{};
     topLevelDoc << "subDoc1" << types::b_document{nestedValue.view()} << "subDoc2" << open_document
-                << concatenate(nestedValue.view()) << close_document << "subDoc3"
-                << nestedValue << finalize;
+                << concatenate(nestedValue.view()) << close_document << "subDoc3" << nestedValue
+                << finalize;
 
     // `topLevelDoc` now looks like:
     // {

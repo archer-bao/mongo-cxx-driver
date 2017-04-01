@@ -15,11 +15,13 @@
 #include <mongocxx/read_preference.hpp>
 
 #include <bsoncxx/stdx/make_unique.hpp>
-#include <mongocxx/private/libbson.hpp>
-#include <mongocxx/private/libmongoc.hpp>
-#include <mongocxx/private/read_preference.hpp>
+#include <mongocxx/exception/error_code.hpp>
+#include <mongocxx/exception/logic_error.hpp>
+#include <mongocxx/private/libbson.hh>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/private/read_preference.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -28,8 +30,7 @@ read_preference::read_preference(read_preference&&) noexcept = default;
 read_preference& read_preference::operator=(read_preference&&) noexcept = default;
 
 read_preference::read_preference(const read_preference& other)
-    : _impl(stdx::make_unique<impl>(libmongoc::read_prefs_copy(other._impl->read_preference_t))) {
-}
+    : _impl(stdx::make_unique<impl>(libmongoc::read_prefs_copy(other._impl->read_preference_t))) {}
 
 read_preference& read_preference::operator=(const read_preference& other) {
     _impl.reset(stdx::make_unique<impl>(libmongoc::read_prefs_copy(other._impl->read_preference_t))
@@ -41,10 +42,13 @@ read_preference::read_preference(std::unique_ptr<impl>&& implementation) {
     _impl.reset(implementation.release());
 }
 
+read_preference::read_preference()
+    : _impl(stdx::make_unique<impl>(
+          libmongoc::read_prefs_new(static_cast<mongoc_read_mode_t>(read_mode::k_primary)))) {}
+
 read_preference::read_preference(read_mode mode)
     : _impl(stdx::make_unique<impl>(
-          libmongoc::read_prefs_new(static_cast<mongoc_read_mode_t>(mode)))) {
-}
+          libmongoc::read_prefs_new(static_cast<mongoc_read_mode_t>(mode)))) {}
 
 read_preference::read_preference(read_mode mode, bsoncxx::document::view_or_value tags)
     : read_preference(mode) {
@@ -53,13 +57,17 @@ read_preference::read_preference(read_mode mode, bsoncxx::document::view_or_valu
 
 read_preference::~read_preference() = default;
 
-void read_preference::mode(read_mode mode) {
+read_preference& read_preference::mode(read_mode mode) {
     libmongoc::read_prefs_set_mode(_impl->read_preference_t, static_cast<mongoc_read_mode_t>(mode));
+
+    return *this;
 }
 
-void read_preference::tags(bsoncxx::document::view_or_value tags) {
+read_preference& read_preference::tags(bsoncxx::document::view_or_value tags) {
     libbson::scoped_bson_t scoped_bson_tags(std::move(tags));
     libmongoc::read_prefs_set_tags(_impl->read_preference_t, scoped_bson_tags.bson());
+
+    return *this;
 }
 
 read_preference::read_mode read_preference::mode() const {
@@ -75,8 +83,34 @@ stdx::optional<bsoncxx::document::view> read_preference::tags() const {
     return stdx::optional<bsoncxx::document::view>{};
 }
 
-bool operator==(const read_preference& lhs, const read_preference& rhs) {
-    return (lhs.mode() == rhs.mode()) && (lhs.tags() == rhs.tags());
+read_preference& read_preference::max_staleness(std::chrono::seconds max_staleness) {
+    auto max_staleness_sec = max_staleness.count();
+    if (max_staleness_sec <= 0) {
+        throw logic_error{error_code::k_invalid_parameter};
+    }
+    libmongoc::read_prefs_set_max_staleness_seconds(_impl->read_preference_t, max_staleness_sec);
+
+    return *this;
+}
+
+stdx::optional<std::chrono::seconds> read_preference::max_staleness() const {
+    auto staleness = libmongoc::read_prefs_get_max_staleness_seconds(_impl->read_preference_t);
+
+    // libmongoc signals "disabled" with the value -1.
+    if (staleness == -1) {
+        return stdx::nullopt;
+    }
+
+    return std::chrono::seconds{staleness};
+}
+
+bool MONGOCXX_CALL operator==(const read_preference& lhs, const read_preference& rhs) {
+    return (lhs.mode() == rhs.mode()) && (lhs.tags() == rhs.tags()) &&
+           (lhs.max_staleness() == rhs.max_staleness());
+}
+
+bool MONGOCXX_CALL operator!=(const read_preference& lhs, const read_preference& rhs) {
+    return !(lhs == rhs);
 }
 
 MONGOCXX_INLINE_NAMESPACE_END

@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <bsoncxx/array/view.hpp>
 #include <bsoncxx/array/value.hpp>
+#include <bsoncxx/array/view.hpp>
 #include <bsoncxx/builder/core.hpp>
 #include <bsoncxx/builder/stream/array_context.hpp>
 #include <bsoncxx/builder/stream/key_context.hpp>
@@ -38,8 +38,7 @@ class array : public array_context<> {
     ///
     /// Default constructor.
     ///
-    BSONCXX_INLINE array() : array_context<>(&_core), _core(true) {
-    }
+    BSONCXX_INLINE array() : array_context<>(&_core), _core(true) {}
 
     ///
     /// @return A view of the BSON array.

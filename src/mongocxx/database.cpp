@@ -22,16 +22,16 @@
 #include <mongocxx/exception/error_code.hpp>
 #include <mongocxx/exception/logic_error.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
-#include <mongocxx/exception/private/error_category.hpp>
-#include <mongocxx/exception/private/mongoc_error.hpp>
-#include <mongocxx/private/client.hpp>
-#include <mongocxx/private/database.hpp>
-#include <mongocxx/private/libbson.hpp>
-#include <mongocxx/private/libmongoc.hpp>
-#include <mongocxx/private/read_concern.hpp>
-#include <mongocxx/private/read_preference.hpp>
+#include <mongocxx/exception/private/error_category.hh>
+#include <mongocxx/exception/private/mongoc_error.hh>
+#include <mongocxx/private/client.hh>
+#include <mongocxx/private/database.hh>
+#include <mongocxx/private/libbson.hh>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/private/read_concern.hh>
+#include <mongocxx/private/read_preference.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 using bsoncxx::builder::stream::concatenate;
 using bsoncxx::builder::stream::document;
@@ -50,8 +50,8 @@ database::~database() = default;
 database::database(const class client& client, bsoncxx::string::view_or_value name)
     : _impl(stdx::make_unique<impl>(
           libmongoc::client_get_database(client._get_impl().client_t, name.terminated().data()),
-          &client._get_impl(), name.terminated().data())) {
-}
+          &client._get_impl(),
+          name.terminated().data())) {}
 
 database::database(const database& d) {
     if (d) {
@@ -94,8 +94,8 @@ bsoncxx::document::value database::run_command(bsoncxx::document::view_or_value 
     bson_error_t error;
 
     reply_bson.flag_init();
-    auto result = libmongoc::database_command_simple(_get_impl().database_t, command_bson.bson(),
-                                                     NULL, reply_bson.bson(), &error);
+    auto result = libmongoc::database_command_simple(
+        _get_impl().database_t, command_bson.bson(), NULL, reply_bson.bson(), &error);
 
     if (!result) {
         throw_exception<operation_exception>(reply_bson.steal(), error);
@@ -113,17 +113,110 @@ bsoncxx::document::value database::modify_collection(stdx::string_view name,
 
 class collection database::create_collection(bsoncxx::string::view_or_value name,
                                              const options::create_collection& options) {
-    bson_error_t error;
+    document options_builder{};
 
-    libbson::scoped_bson_t opts_bson{options.to_document()};
+    if (options.auto_index_id()) {
+        options_builder << "autoIndexId" << *options.auto_index_id();
+    }
+
+    if (options.capped()) {
+        options_builder << "capped" << *options.capped();
+    }
+
+    if (options.collation()) {
+        options_builder << "collation" << *options.collation();
+    }
+
+    if (options.max()) {
+        options_builder << "max" << *options.max();
+    }
+
+    if (options.no_padding()) {
+        options_builder << "flags" << (*options.no_padding() ? 0x10 : 0x00);
+    }
+
+    if (options.size()) {
+        options_builder << "size" << *options.size();
+    }
+
+    if (options.storage_engine()) {
+        options_builder << "storageEngine" << *options.storage_engine();
+    }
+
+    if (options.validation_criteria()) {
+        auto validation_level_to_string = [](validation_criteria::validation_level level) {
+            switch (level) {
+                case validation_criteria::validation_level::k_off:
+                    return "off";
+                case validation_criteria::validation_level::k_moderate:
+                    return "moderate";
+                case validation_criteria::validation_level::k_strict:
+                    return "strict";
+            }
+            MONGOCXX_UNREACHABLE;
+        };
+
+        auto validation_action_to_string = [](validation_criteria::validation_action action) {
+            switch (action) {
+                case validation_criteria::validation_action::k_warn:
+                    return "warn";
+                case validation_criteria::validation_action::k_error:
+                    return "error";
+            }
+            MONGOCXX_UNREACHABLE;
+        };
+
+        auto validation_criteria = *options.validation_criteria();
+
+        if (validation_criteria.rule()) {
+            options_builder << "validator" << *validation_criteria.rule();
+        }
+
+        if (validation_criteria.level()) {
+            options_builder << "validationLevel"
+                            << validation_level_to_string(*validation_criteria.level());
+        }
+
+        if (validation_criteria.action()) {
+            options_builder << "validationAction"
+                            << validation_action_to_string(*validation_criteria.action());
+        }
+    }
+
+    bson_error_t error;
+    libbson::scoped_bson_t opts_bson{options_builder.view()};
     auto result = libmongoc::database_create_collection(
         _get_impl().database_t, name.terminated().data(), opts_bson.bson(), &error);
-
     if (!result) {
         throw_exception<operation_exception>(error);
     }
 
-    return mongocxx::collection(*this, static_cast<void*>(result));
+    return mongocxx::collection(*this, result);
+}
+
+class collection database::create_view(bsoncxx::string::view_or_value name,
+                                       bsoncxx::string::view_or_value view_on,
+                                       const options::create_view& options) {
+    document options_builder{};
+    options_builder << "viewOn" << view_on;
+
+    if (options.collation()) {
+        options_builder << "collation" << *options.collation();
+    }
+
+    if (options.pipeline()) {
+        options_builder << "pipeline" << options.pipeline()->view_array();
+    }
+
+    libbson::scoped_bson_t opts_bson{options_builder.view()};
+    bson_error_t error;
+    auto result = libmongoc::database_create_collection(
+        _get_impl().database_t, name.terminated().data(), opts_bson.bson(), &error);
+    if (!result) {
+        throw_exception<operation_exception>(error);
+    }
+
+    return mongocxx::collection(*this, result);
 }
 
 void database::drop() {
@@ -148,8 +241,8 @@ void database::read_preference(class read_preference rp) {
 
 bool database::has_collection(bsoncxx::string::view_or_value name) const {
     bson_error_t error;
-    auto result = libmongoc::database_has_collection(_get_impl().database_t,
-                                                     name.terminated().data(), &error);
+    auto result = libmongoc::database_has_collection(
+        _get_impl().database_t, name.terminated().data(), &error);
     if (error.domain != 0) {
         throw_exception<operation_exception>(error);
     }
@@ -175,6 +268,10 @@ class write_concern database::write_concern() const {
 
 collection database::collection(bsoncxx::string::view_or_value name) const {
     return mongocxx::collection(*this, std::move(name));
+}
+
+gridfs::bucket database::gridfs_bucket(const options::gridfs::bucket& options) const {
+    return gridfs::bucket{*this, options};
 }
 
 const database::impl& database::_get_impl() const {

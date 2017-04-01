@@ -12,12 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
 #include "helpers.hpp"
 
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/options/update.hpp>
 
+using namespace bsoncxx::builder::stream;
 using namespace mongocxx;
 
 TEST_CASE("update opts", "[update][option]") {
@@ -25,7 +27,11 @@ TEST_CASE("update opts", "[update][option]") {
 
     options::update updt;
 
-    CHECK_OPTIONAL_ARGUMENT(updt, upsert, true);
+    auto collation = document{} << "locale"
+                                << "en_US" << finalize;
+
     CHECK_OPTIONAL_ARGUMENT(updt, bypass_document_validation, true);
-    CHECK_OPTIONAL_ARGUMENT_WITHOUT_EQUALITY(updt, write_concern, write_concern{});
+    CHECK_OPTIONAL_ARGUMENT(updt, collation, collation.view());
+    CHECK_OPTIONAL_ARGUMENT(updt, upsert, true);
+    CHECK_OPTIONAL_ARGUMENT(updt, write_concern, write_concern{});
 }

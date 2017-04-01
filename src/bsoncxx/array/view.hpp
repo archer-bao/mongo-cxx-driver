@@ -18,8 +18,8 @@
 #include <cstdint>
 #include <iterator>
 
-#include <bsoncxx/document/view.hpp>
 #include <bsoncxx/array/element.hpp>
+#include <bsoncxx/document/view.hpp>
 
 #include <bsoncxx/config/prelude.hpp>
 
@@ -32,28 +32,28 @@ namespace array {
 ///
 class BSONCXX_API view {
    public:
-    class BSONCXX_API iterator;
     class BSONCXX_API const_iterator;
+    using iterator = const_iterator;
 
     ///
-    /// @returns An const_iterator to the first element of the array.
+    /// @returns A const_iterator to the first element of the array.
     ///
     const_iterator cbegin() const;
 
     ///
-    /// @returns An const_iterator to the past-the-end element of the array.
+    /// @returns A const_iterator to the past-the-end element of the array.
     ///
     const_iterator cend() const;
 
     ///
-    /// @returns An iterator to the first element of the array.
+    /// @returns A const_iterator to the first element of the array.
     ///
-    iterator begin() const;
+    const_iterator begin() const;
 
     ///
-    /// @returns An iterator to the past-the-end element of the array.
+    /// @returns A const_iterator to the past-the-end element of the array.
     ///
-    iterator end() const;
+    const_iterator end() const;
 
     ///
     /// Indexes into this BSON array. If the index is out-of-bounds, a past-the-end iterator
@@ -65,7 +65,7 @@ class BSONCXX_API view {
     ///
     /// @return An iterator to the element if it exists, or the past-the-end iterator.
     ///
-    iterator find(std::uint32_t i) const;
+    const_iterator find(std::uint32_t i) const;
 
     ///
     /// Indexes into this BSON array. If the index is out-of-bounds, the invalid array::element
@@ -141,48 +141,16 @@ class BSONCXX_API view {
 };
 
 ///
-/// A mutable iterator over the contents of an array view.
-///
-/// This iterator type provides a mutable forward iterator interface to array
-/// view elements.
-///
-class BSONCXX_API view::iterator : public std::iterator<std::forward_iterator_tag, element> {
-   public:
-    iterator();
-    explicit iterator(const element& element);
-
-    reference operator*();
-    pointer operator->();
-
-    iterator& operator++();
-    iterator operator++(int);
-
-    ///
-    /// @{
-    ///
-    /// Compare two iterators for (in)-equality
-    ///
-    /// @relates view::iterator
-    ///
-    friend BSONCXX_API bool BSONCXX_CALL operator==(const iterator&, const iterator&);
-    friend BSONCXX_API bool BSONCXX_CALL operator!=(const iterator&, const iterator&);
-    ///
-    /// @}
-    ///
-
-   private:
-    element _element;
-};
-
-///
 /// A const iterator over the contents of an array view.
 ///
 /// This iterator type provides a const forward iterator interface to array
 /// view elements.
 ///
-class BSONCXX_API view::const_iterator
-    : public std::iterator<std::forward_iterator_tag, element, std::ptrdiff_t, const element*,
-                           const element&> {
+class BSONCXX_API view::const_iterator : public std::iterator<std::forward_iterator_tag,
+                                                              element,
+                                                              std::ptrdiff_t,
+                                                              const element*,
+                                                              const element&> {
    public:
     const_iterator();
     explicit const_iterator(const element& element);

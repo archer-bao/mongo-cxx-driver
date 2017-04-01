@@ -27,6 +27,9 @@
 
 #include <mongocxx/config/prelude.hpp>
 
+///
+/// Top level namespace for the MongoDB C++ driver.
+///
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
 
@@ -42,8 +45,8 @@ MONGOCXX_INLINE_NAMESPACE_BEGIN
 ///
 /// Example:
 /// @code
-///   mongocxx::client mongo_client;
-///   mongocxx::client mongo_client("mongodb://localhost:27017");
+///   mongocxx::client mongo_client{mongocxx::uri{}};
+///   mongocxx::client mongo_client{mongocxx::uri{"mongodb://localhost:27017"}};
 /// @endcode
 ///
 class MONGOCXX_API client {
@@ -62,6 +65,9 @@ class MONGOCXX_API client {
     ///   A MongoDB URI representing the connection parameters
     /// @param options
     ///   Additional options that cannot be specified via the mongodb_uri
+    ///
+    /// @throws mongocxx::exception if invalid options are provided
+    /// (whether from the URI or provided client options).
     ///
     client(const class uri& mongodb_uri, const options::client& options = options::client());
 
@@ -96,7 +102,7 @@ class MONGOCXX_API client {
     /// @param rc
     ///   The new @c read_concern
     ///
-    /// @see https://docs.mongodb.org/manual/reference/read-concern/
+    /// @see https://docs.mongodb.com/master/reference/read-concern/
     ///
     void read_concern(class read_concern rc);
 
@@ -117,7 +123,7 @@ class MONGOCXX_API client {
     /// @param rp
     ///   The new @c read_preference
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @see https://docs.mongodb.com/master/core/read-preference/
     ///
     void read_preference(class read_preference rp);
 
@@ -126,7 +132,7 @@ class MONGOCXX_API client {
     ///
     /// @return The current @c read_preference
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @see https://docs.mongodb.com/master/core/read-preference/
     ///
     class read_preference read_preference() const;
 
@@ -191,9 +197,9 @@ class MONGOCXX_API client {
     ///   disk in bytes, and an empty field specifying whether the database
     ///   has any data.
     ///
-    /// @throws exception::operation if the underlying 'listDatabases' command fails.
+    /// @throws mongocxx::operation_exception if the underlying 'listDatabases' command fails.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/listDatabases
+    /// @see https://docs.mongodb.com/master/reference/command/listDatabases
     ///
     cursor list_databases() const;
 
@@ -212,7 +218,7 @@ class MONGOCXX_API client {
     std::unique_ptr<impl> _impl;
 };
 
-MONGOCXX_INLINE database client::operator[](bsoncxx::string::view_or_value name) const & {
+MONGOCXX_INLINE database client::operator[](bsoncxx::string::view_or_value name) const& {
     return database(name);
 }
 

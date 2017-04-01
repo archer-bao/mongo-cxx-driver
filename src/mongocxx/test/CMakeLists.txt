@@ -25,17 +25,33 @@ set(mongocxx_test_sources
     collection.cpp
     collection_mocked.cpp
     database.cpp
+    gridfs/bucket.cpp
+    gridfs/downloader.cpp
+    gridfs/uploader.cpp
     hint.cpp
+    model/delete_many.cpp
+    model/delete_one.cpp
+    model/insert_one.cpp
+    model/replace_one.cpp
     model/update_many.cpp
+    model/update_one.cpp
     options/aggregate.cpp
+    options/count.cpp
     options/create_collection.cpp
+    options/create_view.cpp
+    options/delete.cpp
+    options/distinct.cpp
     options/find.cpp
     options/find_one_and_delete.cpp
     options/find_one_and_replace.cpp
     options/find_one_and_update.cpp
+    options/gridfs/bucket.cpp
+    options/gridfs/upload.cpp
     options/index.cpp
     options/insert.cpp
     options/modify_collection.cpp
+    options/pool.cpp
+    options/private/rewriter.cpp
     options/update.cpp
     pool.cpp
     private/scoped_bson_t.cpp
@@ -43,14 +59,17 @@ set(mongocxx_test_sources
     read_concern.cpp
     read_preference.cpp
     result/delete.cpp
+    result/gridfs/upload.cpp
     result/insert_one.cpp
     result/replace_one.cpp
     result/update.cpp
+    uri.cpp
     validation_criteria.cpp
     write_concern.cpp
 )
 
 add_executable(test_driver
+    ${CMAKE_SOURCE_DIR}/src/mongocxx/test_util/client_helpers.cpp
     ${THIRD_PARTY_SOURCE_DIR}/catch/main.cpp
     ${mongocxx_test_sources}
 )
@@ -69,4 +88,30 @@ if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
 endif()
 
 add_test(driver test_driver)
+
 add_test(instance test_instance)
+
+add_executable(test_crud_specs
+    ${CMAKE_SOURCE_DIR}/src/mongocxx/test_util/client_helpers.cpp
+    ${THIRD_PARTY_SOURCE_DIR}/catch/main.cpp
+    spec/crud.cpp
+)
+
+add_executable(test_gridfs_specs
+    ${CMAKE_SOURCE_DIR}/src/mongocxx/test_util/client_helpers.cpp
+    ${THIRD_PARTY_SOURCE_DIR}/catch/main.cpp
+    spec/gridfs.cpp
+)
+
+target_link_libraries(test_crud_specs bsoncxx mongocxx)
+target_link_libraries(test_gridfs_specs bsoncxx mongocxx)
+
+add_test(crud_specs test_crud_specs)
+add_test(gridfs_specs test_gridfs_specs)
+
+
+set_tests_properties(crud_specs PROPERTIES
+    ENVIRONMENT "CRUD_TESTS_PATH=${CMAKE_SOURCE_DIR}/data/crud")
+
+set_tests_properties(gridfs_specs PROPERTIES
+    ENVIRONMENT "GRIDFS_TESTS_PATH=${CMAKE_SOURCE_DIR}/data/gridfs")

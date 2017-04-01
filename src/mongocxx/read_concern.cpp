@@ -17,27 +17,24 @@
 #include <bsoncxx/stdx/make_unique.hpp>
 #include <mongocxx/exception/error_code.hpp>
 #include <mongocxx/exception/exception.hpp>
-#include <mongocxx/private/libmongoc.hpp>
-#include <mongocxx/private/read_concern.hpp>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/private/read_concern.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
 
-read_concern::read_concern() : _impl{stdx::make_unique<impl>(libmongoc::read_concern_new())} {
-}
+read_concern::read_concern() : _impl{stdx::make_unique<impl>(libmongoc::read_concern_new())} {}
 
 read_concern::read_concern(std::unique_ptr<impl>&& implementation)
-    : _impl{std::move(implementation)} {
-}
+    : _impl{std::move(implementation)} {}
 
 read_concern::read_concern(read_concern&&) noexcept = default;
 read_concern& read_concern::operator=(read_concern&&) noexcept = default;
 
 read_concern::read_concern(const read_concern& other)
-    : _impl(stdx::make_unique<impl>(libmongoc::read_concern_copy(other._impl->read_concern_t))) {
-}
+    : _impl(stdx::make_unique<impl>(libmongoc::read_concern_copy(other._impl->read_concern_t))) {}
 
 read_concern& read_concern::operator=(const read_concern& other) {
     _impl = stdx::make_unique<impl>(libmongoc::read_concern_copy(other._impl->read_concern_t));
@@ -56,6 +53,10 @@ void read_concern::acknowledge_level(read_concern::level rc_level) {
             libmongoc::read_concern_set_level(_impl->read_concern_t,
                                               MONGOC_READ_CONCERN_LEVEL_MAJORITY);
             break;
+        case read_concern::level::k_linearizable:
+            libmongoc::read_concern_set_level(_impl->read_concern_t,
+                                              MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE);
+            break;
         case read_concern::level::k_server_default:
             // libmongoc uses a NULL level to mean "use the server's default read_concern."
             libmongoc::read_concern_set_level(_impl->read_concern_t, NULL);
@@ -66,7 +67,9 @@ void read_concern::acknowledge_level(read_concern::level rc_level) {
 }
 
 void read_concern::acknowledge_string(stdx::string_view rc_string) {
-    libmongoc::read_concern_set_level(_impl->read_concern_t, rc_string.to_string().data());
+    // libmongoc uses a NULL level to mean "use the server's default read_concern."
+    libmongoc::read_concern_set_level(_impl->read_concern_t,
+                                      rc_string.empty() ? NULL : rc_string.to_string().data());
 }
 
 read_concern::level read_concern::acknowledge_level() const {
@@ -78,6 +81,8 @@ read_concern::level read_concern::acknowledge_level() const {
         return read_concern::level::k_local;
     } else if (strcmp(MONGOC_READ_CONCERN_LEVEL_MAJORITY, level) == 0) {
         return read_concern::level::k_majority;
+    } else if (strcmp(MONGOC_READ_CONCERN_LEVEL_LINEARIZABLE, level) == 0) {
+        return read_concern::level::k_linearizable;
     } else {
         return read_concern::level::k_unknown;
     }
@@ -89,6 +94,14 @@ stdx::string_view read_concern::acknowledge_string() const {
         return "";
     }
     return {stdx::string_view{level}};
+}
+
+bool MONGOCXX_CALL operator==(const read_concern& lhs, const read_concern& rhs) {
+    return lhs.acknowledge_level() == rhs.acknowledge_level();
+}
+
+bool MONGOCXX_CALL operator!=(const read_concern& lhs, const read_concern& rhs) {
+    return !(lhs == rhs);
 }
 
 MONGOCXX_INLINE_NAMESPACE_END

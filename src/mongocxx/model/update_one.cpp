@@ -14,7 +14,7 @@
 
 #include <mongocxx/model/update_one.hpp>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -22,7 +22,23 @@ namespace model {
 
 update_one::update_one(bsoncxx::document::view_or_value filter,
                        bsoncxx::document::view_or_value update)
-    : _filter(std::move(filter)), _update(std::move(update)) {
+    : _filter(std::move(filter)), _update(std::move(update)) {}
+
+const bsoncxx::document::view_or_value& update_one::filter() const {
+    return _filter;
+}
+
+const bsoncxx::document::view_or_value& update_one::update() const {
+    return _update;
+}
+
+update_one& update_one::collation(bsoncxx::document::view_or_value collation) {
+    _collation = collation;
+    return *this;
+}
+
+const stdx::optional<bsoncxx::document::view_or_value>& update_one::collation() const {
+    return _collation;
 }
 
 update_one& update_one::upsert(bool upsert) {
@@ -32,14 +48,6 @@ update_one& update_one::upsert(bool upsert) {
 
 const stdx::optional<bool>& update_one::upsert() const {
     return _upsert;
-}
-
-const bsoncxx::document::view_or_value& update_one::filter() const {
-    return _filter;
-}
-
-const bsoncxx::document::view_or_value& update_one::update() const {
-    return _update;
 }
 
 }  // namespace model

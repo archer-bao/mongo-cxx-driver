@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
-
-#include <mongocxx/private/libmongoc.hpp>
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/instance.hpp>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/private/write_concern.hh>
 #include <mongocxx/write_concern.hpp>
-#include <mongocxx/private/write_concern.hpp>
 
 using namespace mongocxx;
 

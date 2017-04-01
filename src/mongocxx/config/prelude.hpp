@@ -25,6 +25,8 @@
 #undef MONGOCXX_INLINE_NAMESPACE_END
 
 // src/mongocxx/config/version.hpp.in
+#pragma push_macro("MONGOCXX_VERSION_STRING")
+#undef MONGOCXX_VERSION_STRING
 #pragma push_macro("MONGOCXX_VERSION_EXTRA")
 #undef MONGOCXX_VERSION_EXTRA
 #pragma push_macro("MONGOCXX_VERSION_MAJOR")
@@ -52,10 +54,10 @@
 #pragma push_macro("MONGOCXX_NO_DEPRECATED")
 #undef MONGOCXX_NO_DEPRECATED
 
-#include <mongocxx/config/config.hpp>
-#include <mongocxx/config/version.hpp>
-#include <mongocxx/config/export.hpp>
 #include <mongocxx/config/compiler.hpp>
+#include <mongocxx/config/config.hpp>
+#include <mongocxx/config/export.hpp>
+#include <mongocxx/config/version.hpp>
 
 // TODO: Find a way to DRY this with BSONCXX_UNREACHABLE
 #pragma push_macro("MONGOCXX_UNREACHABLE")

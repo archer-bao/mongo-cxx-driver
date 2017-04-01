@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -39,7 +39,7 @@ class server_error_category final : public std::error_category {
 
 }  // namespace
 
-const std::error_category& server_error_category() {
+const std::error_category& MONGOCXX_CALL server_error_category() {
     static const class server_error_category category {};
     return category;
 }

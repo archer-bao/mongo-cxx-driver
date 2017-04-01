@@ -33,6 +33,29 @@ namespace options {
 ///
 class MONGOCXX_API find_one_and_update {
    public:
+    /// Sets the collation for this operation.
+    ///
+    /// @param collation
+    ///   The new collation.
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
+    ///
+    find_one_and_update& collation(bsoncxx::document::view_or_value collation);
+
+    ///
+    /// Retrieves the current collation for this operation.
+    ///
+    /// @return
+    ///   The current collation.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
+    ///
+    const stdx::optional<bsoncxx::document::view_or_value>& collation() const;
+
     ///
     /// Whether or not to bypass document validation for this operation.
     ///
@@ -43,7 +66,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param bypass_document_validation
     ///   Whether or not to bypass document validation.
     ///
-    /// @see https://docs.mongodb.org/manual/core/document-validation/#bypass-document-validation
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     find_one_and_update& bypass_document_validation(bool bypass_document_validation);
 
@@ -51,6 +78,8 @@ class MONGOCXX_API find_one_and_update {
     /// The current setting for bypassing document validation.
     ///
     /// @return the current bypass document validation setting.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     const stdx::optional<bool>& bypass_document_validation() const;
 
@@ -60,7 +89,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param max_time
     ///   The max amount of time (in milliseconds).
     ///
-    /// @see http://docs.mongodb.org/manual/reference/operator/meta/maxTimeMS
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     find_one_and_update& max_time(std::chrono::milliseconds max_time);
 
@@ -69,7 +102,7 @@ class MONGOCXX_API find_one_and_update {
     ///
     /// @return the current max allowed running time (in milliseconds).
     ///
-    /// @see http://docs.mongodb.org/manual/reference/operator/meta/maxTimeMS
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     const stdx::optional<std::chrono::milliseconds>& max_time() const;
 
@@ -79,7 +112,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param projection
     ///   The projection document.
     ///
-    /// @see http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     find_one_and_update& projection(bsoncxx::document::view_or_value projection);
 
@@ -88,7 +125,7 @@ class MONGOCXX_API find_one_and_update {
     ///
     /// @return The current projection.
     ///
-    /// @see http://docs.mongodb.org/manual/tutorial/project-fields-from-query-results/
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     const stdx::optional<bsoncxx::document::view_or_value>& projection() const;
 
@@ -99,7 +136,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param return_document
     ///   Version of document to return, either original or updated.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     /// @see mongocxx::options::return_document
     ///
     find_one_and_update& return_document(return_document return_document);
@@ -109,7 +150,7 @@ class MONGOCXX_API find_one_and_update {
     ///
     /// @return Version of document to return, either original or updated.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     /// @see mongocxx::options::return_document
     ///
     const stdx::optional<mongocxx::options::return_document>& return_document() const;
@@ -123,7 +164,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param ordering
     ///   Document describing the order of the documents to be returned.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     find_one_and_update& sort(bsoncxx::document::view_or_value ordering);
 
@@ -132,7 +177,7 @@ class MONGOCXX_API find_one_and_update {
     ///
     /// @return The current sort ordering.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     const stdx::optional<bsoncxx::document::view_or_value>& sort() const;
 
@@ -144,7 +189,11 @@ class MONGOCXX_API find_one_and_update {
     /// @param upsert
     ///   Whether or not to perform an upsert.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     find_one_and_update& upsert(bool upsert);
 
@@ -153,12 +202,13 @@ class MONGOCXX_API find_one_and_update {
     ///
     /// @return The current upsert setting.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/findAndModify/
+    /// @see https://docs.mongodb.com/master/reference/command/findAndModify/
     ///
     const stdx::optional<bool>& upsert() const;
 
    private:
     stdx::optional<bool> _bypass_document_validation;
+    stdx::optional<bsoncxx::document::view_or_value> _collation;
     stdx::optional<std::chrono::milliseconds> _max_time;
     stdx::optional<bsoncxx::document::view_or_value> _projection;
     stdx::optional<mongocxx::options::return_document> _return_document;

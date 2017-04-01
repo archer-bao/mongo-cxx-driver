@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
-
 #include <cstring>
 
 #include <bson.h>
@@ -22,7 +20,9 @@
 #include <bsoncxx/builder/core.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/exception/exception.hpp>
 #include <bsoncxx/json.hpp>
+#include <bsoncxx/test_util/catch.hh>
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/types/value.hpp>
 
@@ -257,8 +257,12 @@ TEST_CASE("builder appends regex", "[bsoncxx::builder::stream]") {
     builder::stream::document b;
 
     bson_append_regex(&expected, "foo", -1, "^foo|bar$", "i");
+    bson_append_regex(&expected, "boo", -1, "^boo|far$", "");
+    bson_append_regex(&expected, "bar", -1, "^bar|foo$", "");
 
     b << "foo" << types::b_regex{"^foo|bar$", "i"};
+    b << "boo" << types::b_regex{"^boo|far$", ""};
+    b << "bar" << types::b_regex{"^bar|foo$"};
 
     bson_eq_stream(&expected, b);
 
@@ -365,6 +369,42 @@ TEST_CASE("builder appends int64", "[bsoncxx::builder::stream]") {
 
     SECTION("b_int64") {
         b << "foo" << types::b_int64{100};
+
+        bson_eq_stream(&expected, b);
+    }
+
+    bson_destroy(&expected);
+}
+
+TEST_CASE("builder appends decimal128", "[bsoncxx::builder::stream]") {
+    bson_t expected;
+    bson_init(&expected);
+
+    bson_decimal128_t d128;
+    bson_decimal128_from_string("-1234E+999", &d128);
+    bson_append_decimal128(&expected, "foo", -1, &d128);
+
+    builder::stream::document b;
+
+    SECTION("b_decimal128 works") {
+        b << "foo" << types::b_decimal128{"-1234E+999"};
+
+        bson_eq_stream(&expected, b);
+    }
+
+    SECTION("raw bsoncxx::decimal128 works") {
+        b << "foo" << bsoncxx::decimal128{"-1234E+999"};
+
+        bson_eq_stream(&expected, b);
+    }
+
+    SECTION("bsoncxx::types::value with decimal128 works") {
+        auto d = types::b_decimal128{"-1234E+999"};
+        auto v = types::value{d};
+
+        REQUIRE(v.get_decimal128() == d);
+
+        b << "foo" << v;
 
         bson_eq_stream(&expected, b);
     }
@@ -592,8 +632,8 @@ TEST_CASE("builder appends lambdas", "[bsoncxx::builder::stream]") {
                   << "value1"
                   << "key2"
                   << "value2";
-            } << close_document << "c" << open_array << [](array_context<> a) { a << 1 << 2 << 3; }
-               << close_array;
+            } << close_document
+               << "c" << open_array << [](array_context<> a) { a << 1 << 2 << 3; } << close_array;
     }
 
     viewable_eq_viewable(expected, stream);
@@ -702,6 +742,91 @@ TEST_CASE("core builder open/close works", "[bsoncxx::builder::core]") {
     }
 }
 
+TEST_CASE("core view/extract methods throw when called with wrong top-level type",
+          "[bsoncxx::builder::core]") {
+    builder::core core_array(true);
+    builder::core core_document(false);
+
+    SECTION("view_array only throws when called on document") {
+        REQUIRE_NOTHROW(core_array.view_array());
+        REQUIRE_THROWS(core_document.view_array());
+    }
+
+    SECTION("extract_array only throws when called on document") {
+        REQUIRE_NOTHROW(core_array.extract_array());
+        REQUIRE_THROWS(core_document.extract_array());
+    }
+
+    SECTION("view_document only throws when called on array") {
+        REQUIRE_THROWS(core_array.view_document());
+        REQUIRE_NOTHROW(core_document.view_document());
+    }
+
+    SECTION("extract_document only throws when called on array") {
+        REQUIRE_THROWS(core_array.extract_document());
+        REQUIRE_NOTHROW(core_document.extract_document());
+    }
+}
+
+TEST_CASE("core builder throws on consecutive keys", "[bsoncxx::builder::core]") {
+    using namespace bsoncxx;
+
+    SECTION("appending key_view twice") {
+        builder::core builder{false};
+        REQUIRE_NOTHROW(builder.key_view("foo"));
+        REQUIRE_THROWS_AS(builder.key_view("bar"), bsoncxx::exception);
+    }
+
+    SECTION("appending key_view then key_owned") {
+        builder::core builder{false};
+        REQUIRE_NOTHROW(builder.key_view("foo"));
+        REQUIRE_THROWS_AS(builder.key_owned("bar"), bsoncxx::exception);
+    }
+
+    SECTION("appending key_owned then key_view") {
+        builder::core builder{false};
+        REQUIRE_NOTHROW(builder.key_owned("foo"));
+        REQUIRE_THROWS_AS(builder.key_view("bar"), bsoncxx::exception);
+    }
+
+    SECTION("appending key_owned twice") {
+        builder::core builder{false};
+        REQUIRE_NOTHROW(builder.key_owned("foo"));
+        REQUIRE_THROWS_AS(builder.key_owned("bar"), bsoncxx::exception);
+    }
+}
+
+TEST_CASE("core method chaining to build document works", "[bsoncxx::builder::core]") {
+    using namespace bsoncxx;
+
+    auto full_doc = builder::core{false}
+                        .key_owned("foo")
+                        .append(1)
+                        .key_owned("bar")
+                        .append(true)
+                        .extract_document();
+
+    REQUIRE(full_doc.view()["foo"].type() == types::b_int32::type_id);
+    REQUIRE(full_doc.view()["foo"].get_int32() == 1);
+    REQUIRE(full_doc.view()["bar"].type() == types::b_bool::type_id);
+    REQUIRE(full_doc.view()["bar"].get_bool() == true);
+}
+
+TEST_CASE("core method chaining to build array works", "[bsoncxx::builder::core]") {
+    using namespace bsoncxx;
+
+    auto array = builder::core{true}.append("foo").append(1).append(true).extract_array();
+    auto array_view = array.view();
+
+    REQUIRE(std::distance(array_view.begin(), array_view.end()) == 3);
+    REQUIRE(array_view[0].type() == type::k_utf8);
+    REQUIRE(array_view[0].get_utf8().value.to_string() == "foo");
+    REQUIRE(array_view[1].type() == type::k_int32);
+    REQUIRE(array_view[1].get_int32().value == 1);
+    REQUIRE(array_view[2].type() == type::k_bool);
+    REQUIRE(array_view[2].get_bool().value == true);
+}
+
 TEST_CASE("basic document builder works", "[bsoncxx::builder::basic]") {
     builder::stream::document stream;
     builder::basic::document basic;
@@ -751,9 +876,10 @@ TEST_CASE("basic document builder works", "[bsoncxx::builder::basic]") {
         {
             using namespace builder::basic;
 
-            basic.append(kvp("hello", "world"), kvp("foo", 35), kvp("bar", [](sub_document sd) {
-                sd.append(kvp("que", "qux"));
-            }), kvp("baz", [](sub_array sa) { sa.append(1, 2, 3); }));
+            basic.append(kvp("hello", "world"),
+                         kvp("foo", 35),
+                         kvp("bar", [](sub_document sd) { sd.append(kvp("que", "qux")); }),
+                         kvp("baz", [](sub_array sa) { sa.append(1, 2, 3); }));
         }
 
         viewable_eq_viewable(stream, basic);
@@ -872,7 +998,34 @@ TEST_CASE("array::view works", "[bsoncxx::builder::array]") {
     REQUIRE(stream.view()[2].get_int32() == 98);
 }
 
-TEST_CASE("stream in a document::view works", "[bsoncxx::bulder::stream]") {
+TEST_CASE("builder::basic::make_document works", "[bsoncxx::builder::basic::make_document]") {
+    using namespace bsoncxx;
+
+    auto full_doc = builder::basic::make_document(builder::basic::kvp("foo", 1),
+                                                  builder::basic::kvp("bar", true));
+
+    REQUIRE(full_doc.view()["foo"].type() == types::b_int32::type_id);
+    REQUIRE(full_doc.view()["foo"].get_int32() == 1);
+    REQUIRE(full_doc.view()["bar"].type() == types::b_bool::type_id);
+    REQUIRE(full_doc.view()["bar"].get_bool() == true);
+}
+
+TEST_CASE("builder::basic::make_array works", "[bsoncxx::builder::basic::make_array]") {
+    using namespace bsoncxx;
+
+    auto array = builder::basic::make_array("foo", 1, true);
+    auto array_view = array.view();
+
+    REQUIRE(std::distance(array_view.begin(), array_view.end()) == 3);
+    REQUIRE(array_view[0].type() == type::k_utf8);
+    REQUIRE(array_view[0].get_utf8().value.to_string() == "foo");
+    REQUIRE(array_view[1].type() == type::k_int32);
+    REQUIRE(array_view[1].get_int32().value == 1);
+    REQUIRE(array_view[2].type() == type::k_bool);
+    REQUIRE(array_view[2].get_bool().value == true);
+}
+
+TEST_CASE("stream in a document::view works", "[bsoncxx::builder::stream]") {
     using namespace builder::stream;
 
     auto sub_doc = builder::stream::document{} << "b" << 1 << finalize;
@@ -883,7 +1036,7 @@ TEST_CASE("stream in a document::view works", "[bsoncxx::bulder::stream]") {
     REQUIRE(full_doc.view()["a"]["b"].get_int32().value == 1);
 }
 
-TEST_CASE("stream in an array::view works", "[bsoncxx::bulder::stream]") {
+TEST_CASE("stream in an array::view works", "[bsoncxx::builder::stream]") {
     using namespace builder::stream;
 
     auto sub_array = builder::stream::array{} << 1 << 2 << 3 << finalize;
@@ -892,4 +1045,14 @@ TEST_CASE("stream in an array::view works", "[bsoncxx::bulder::stream]") {
     REQUIRE(full_doc.view()["a"].type() == bsoncxx::types::b_array::type_id);
     REQUIRE(full_doc.view()["a"][1].type() == bsoncxx::types::b_int32::type_id);
     REQUIRE(full_doc.view()["a"][1].get_int32().value == 2);
+}
+
+TEST_CASE("builder::stream::document throws on consecutive keys", "[bsoncxx::builder::core]") {
+    using namespace bsoncxx;
+
+    builder::stream::document doc;
+    REQUIRE_NOTHROW(doc << "foo"
+                        << "bar");
+    REQUIRE_NOTHROW(doc << "far");
+    REQUIRE_THROWS_AS(doc << "boo", bsoncxx::exception);
 }

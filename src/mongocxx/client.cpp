@@ -18,16 +18,16 @@
 #include <mongocxx/exception/error_code.hpp>
 #include <mongocxx/exception/logic_error.hpp>
 #include <mongocxx/exception/operation_exception.hpp>
-#include <mongocxx/exception/private/error_category.hpp>
-#include <mongocxx/exception/private/mongoc_error.hpp>
-#include <mongocxx/private/client.hpp>
-#include <mongocxx/private/read_concern.hpp>
-#include <mongocxx/private/read_preference.hpp>
-#include <mongocxx/private/ssl.hpp>
-#include <mongocxx/private/uri.hpp>
-#include <mongocxx/private/write_concern.hpp>
+#include <mongocxx/exception/private/error_category.hh>
+#include <mongocxx/exception/private/mongoc_error.hh>
+#include <mongocxx/private/client.hh>
+#include <mongocxx/private/read_concern.hh>
+#include <mongocxx/private/read_preference.hh>
+#include <mongocxx/private/ssl.hh>
+#include <mongocxx/private/uri.hh>
+#include <mongocxx/private/write_concern.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -36,9 +36,7 @@ client::client() noexcept = default;
 
 client::client(const class uri& uri, const options::client& options)
     : _impl(stdx::make_unique<impl>(libmongoc::client_new_from_uri(uri._impl->uri_t))) {
-#if !defined(MONGOC_ENABLE_SSL)
-    if (uri.ssl() || options.ssl_opts()) throw exception{error_code::k_ssl_not_supported};
-#else
+#if defined(MONGOCXX_ENABLE_SSL) && defined(MONGOC_ENABLE_SSL)
     if (options.ssl_opts()) {
         if (!uri.ssl())
             throw exception{error_code::k_invalid_parameter,
@@ -48,12 +46,14 @@ client::client(const class uri& uri, const options::client& options)
         _impl->ssl_options = std::move(mongoc_opts.second);
         libmongoc::client_set_ssl_opts(_get_impl().client_t, &mongoc_opts.first);
     }
+#else
+    if (uri.ssl() || options.ssl_opts())
+        throw exception{error_code::k_ssl_not_supported};
 #endif
 }
 
 client::client(void* implementation)
-    : _impl{stdx::make_unique<impl>(static_cast<::mongoc_client_t*>(implementation))} {
-}
+    : _impl{stdx::make_unique<impl>(static_cast<::mongoc_client_t*>(implementation))} {}
 
 client::client(client&&) noexcept = default;
 client& client::operator=(client&&) noexcept = default;
@@ -100,7 +100,7 @@ class write_concern client::write_concern() const {
     return wc;
 }
 
-class database client::database(bsoncxx::string::view_or_value name) const & {
+class database client::database(bsoncxx::string::view_or_value name) const& {
     return mongocxx::database(*this, std::move(name));
 }
 

@@ -16,7 +16,7 @@
 
 #include <string>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -51,6 +51,19 @@ class error_category final : public std::error_category {
                 return "invalid attempt to set an unknown write concern level";
             case error_code::k_instance_already_exists:
                 return "cannot create more than one mongocxx::instance object";
+            case error_code::k_server_response_malformed:
+                return "the response from the server was malformed";
+            case error_code::k_invalid_uri:
+                return "an invalid MongoDB URI was provided";
+            case error_code::k_invalid_gridfs_bucket_object:
+                return "invalid use of default constructed or moved-from mongocxx::gridfs::bucket "
+                       "object";
+            case error_code::k_invalid_gridfs_uploader_object:
+                return "invalid use of default constructed or moved-from "
+                       "mongocxx::gridfs::uploader object";
+            case error_code::k_invalid_gridfs_downloader_object:
+                return "invalid use of default constructed or moved-from "
+                       "mongocxx::gridfs::downloader object";
             default:
                 return "unknown mongocxx error";
         }
@@ -59,7 +72,7 @@ class error_category final : public std::error_category {
 
 }  // namespace
 
-const std::error_category& error_category() {
+const std::error_category& MONGOCXX_CALL error_category() {
     static const class error_category category {};
     return category;
 }

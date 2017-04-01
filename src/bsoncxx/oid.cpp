@@ -20,7 +20,7 @@
 
 #include <bson.h>
 
-#include <bsoncxx/config/private/prelude.hpp>
+#include <bsoncxx/config/private/prelude.hh>
 
 namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
@@ -34,8 +34,7 @@ oid::oid() {
 
 const oid::init_tag_t oid::init_tag{};
 
-oid::oid(init_tag_t) : oid::oid() {
-}
+oid::oid(init_tag_t) : oid::oid() {}
 
 oid::oid(const bsoncxx::stdx::string_view& str) {
     if (!bson_oid_is_valid(str.data(), str.size())) {
@@ -88,27 +87,27 @@ int oid_compare(const oid& lhs, const oid& rhs) {
     return bson_oid_compare(&lhs_oid, &rhs_oid);
 }
 
-bool operator<(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator<(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) < 0;
 }
 
-bool operator>(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator>(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) > 0;
 }
 
-bool operator<=(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator<=(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) <= 0;
 }
 
-bool operator>=(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator>=(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) >= 0;
 }
 
-bool operator==(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator==(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) == 0;
 }
 
-bool operator!=(const oid& lhs, const oid& rhs) {
+bool BSONCXX_CALL operator!=(const oid& lhs, const oid& rhs) {
     return oid_compare(lhs, rhs) != 0;
 }
 

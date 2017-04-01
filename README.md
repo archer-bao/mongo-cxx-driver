@@ -1,38 +1,56 @@
-# MongoDB C++ Driver [![Build Status](https://travis-ci.org/mongodb/mongo-cxx-driver.svg?branch=master)](https://travis-ci.org/mongodb/mongo-cxx-driver)[![Windows Build Status](https://ci.appveyor.com/api/projects/status/w95xuowdjpr0img1/branch/master?svg=true)](https://ci.appveyor.com/project/markbenvenuto/mongo-cxx-driver)
+# MongoDB C++ Driver [![Evergreen Build Status](https://evergreen.mongodb.com/static/img/favicon.ico)](https://evergreen.mongodb.com/waterfall/cxx-driver)[![Travis Build Status](https://travis-ci.org/mongodb/mongo-cxx-driver.svg?branch=master)](https://travis-ci.org/mongodb/mongo-cxx-driver)
+
 Welcome to the MongoDB C++ Driver!
 
-This branch contains the new C++11 driver and is the recommended
-branch for all users. Please see the README.md files in the "legacy"
-and "26compat" branches for notes on when to use those release
-streams.
+## Branches - `releases/stable` versus `master`
 
-#### Quickstart Guide
+The default checkout branch of this repository is `releases/stable`. 
+This will always contain the latest stable release of the driver. The
+ `master` branch is used for active development. `master` should 
+**only** be used when making contributions back to the driver, as it 
+is not stable for use in production.
 
-See the [wiki page](https://github.com/mongodb/mongo-cxx-driver/wiki/Quickstart-Guide-(New-Driver)).
+See [Driver Status by family and version](#driver-status-by-family-and-version)
+for more details about the various versions of the driver.
 
-#### Why a rewrite?
-This driver contains a completely new API and implementation. A
-complete rewrite allows us to take full advantage of the features
-offered in C++11, and gives us the chance to re-architect the driver
-based on past driver design decisions and their effectiveness. We aim
-for this new driver to be more modern, more lightweight, and
-friendlier to contributors than its predecessors.
+## Resources
 
-## Repository Overview
-| Branch   | Stability   | Development       | Purpose                                                      |
-| -------- | ------------| ----------------- | ------------------------------------------------------------ |
-| master   | Stable      | Stable Evolution  | Primary stable C++ driver release, requires C++11            |
-| legacy   | Stable      | Maintenance Only  | Former stable C++ driver release                             |
-| 26compat | Stable      | Maintenance Only  | Drop in replacement for users of existing 2.6 era C++ driver |
+* [MongoDB C++ Driver Quickstart](https://mongodb.github.io/mongo-cxx-driver/mongocxx-v3/tutorial/)
+* [MongoDB C++ Driver Manual](https://mongodb.github.io/mongo-cxx-driver/)
+* [MongoDB C++ Driver API Documentation](https://mongodb.github.io/mongo-cxx-driver/api/mongocxx-v3)
+* [MongoDB C++ Driver Contribution guidelines](https://mongodb.github.io/mongo-cxx-driver/contributing/)
+* [MongoDB Database Manual](http://docs.mongodb.com/manual/)
 
-## Bugs and Issues
+## Driver status by family and version
+
+Stability indicates whether this driver is recommended for production use.
+Currently, no drivers guarantee API or ABI stability.
+
+| Family/version       | Stability   | Development         | Purpose                                                      |
+| -------------------- | ----------- | ------------------- | ------------------------------------------------------------ |
+| (repo master branch) | Unstable    | Active development  | New feature development                                      |
+| mongocxx 3.1.x       | Stable      | Bug fixes only      | Current stable C++ driver release, requires C++11            |
+| mongocxx 3.0.x       | Stable      | Critical fixes only | Previous stable C++ driver release, requires C++11           |
+| legacy   (all)       | Stable      | Critical fixes only | Legacy API stable C++ driver release, no longer recommended  |
+
+## MongoDB compatibility
+
+The following compatibility table specifies the driver version(s)
+recommended for different versions of MongoDB.  The mongocxx series
+is recommended for all new development.
+
+| Family/version | MongoDB 2.4 | MongoDB 2.6 | MongoDB 3.0 | MongoDB 3.2 | MongoDB 3.4 |
+| -------------- | ----------- | ----------- | ----------- | ----------- | ----------- |
+| mongocxx 3.1.x | ✓           | ✓           | ✓           | ✓           | ✓           |
+| mongocxx 3.0.x | ✓           | ✓           | ✓           | ✓           |             |
+| legacy   1.1.x | ✓           | ✓           | ✓           | ✓           |             |
+| legacy   1.0.x | ✓           | ✓           | ✓           |             |             |
+
+## Bugs and issues
 
 See our [JIRA project](http://jira.mongodb.org/browse/CXX).
 
-## Mailing Lists and IRC
-
-Outlined on the [MongoDB Community site](http://dochub.mongodb.org/core/community).
-
 ## License
 
-The source files in this repository are made available under the terms of the Apache License, version 2.0.
+The source files in this repository are made available under the terms of
+the Apache License, version 2.0.

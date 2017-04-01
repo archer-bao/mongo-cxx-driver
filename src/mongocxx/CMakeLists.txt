@@ -14,21 +14,23 @@
 
 project(MONGOCXX)
 
-set(LIBBSON_REQUIRED_VERSION 1.3.4)
+set(LIBBSON_REQUIRED_VERSION 1.5.0)
 set(LIBBSON_REQUIRED_ABI_VERSION 1.0)
 find_package(LibBSON ${LIBBSON_REQUIRED_VERSION} REQUIRED)
 
-set(LIBMONGOC_REQUIRED_VERSION 1.3.4)
+set(LIBMONGOC_REQUIRED_VERSION 1.5.0)
 set(LIBMONGOC_REQUIRED_ABI_VERSION 1.0)
 find_package(LibMongoC ${LIBMONGOC_REQUIRED_VERSION} REQUIRED)
 
 # Update these as needed.
 # TODO: read from file
 set(MONGOCXX_VERSION_MAJOR 3)
-set(MONGOCXX_VERSION_MINOR 0)
-set(MONGOCXX_VERSION_PATCH 2)
-set(MONGOCXX_VERSION_EXTRA "-rc0-pre")
+set(MONGOCXX_VERSION_MINOR 1)
+set(MONGOCXX_VERSION_PATCH 1)
+set(MONGOCXX_VERSION_EXTRA "-pre")
 set(MONGOCXX_ABI_VERSION _noabi)
+
+option(MONGOCXX_ENABLE_SSL "Enable SSL - if the underlying C driver offers it" ON)
 
 set(MONGOCXX_VERSION ${MONGOCXX_VERSION_MAJOR}.${MONGOCXX_VERSION_MINOR}.${MONGOCXX_VERSION_PATCH}${MONGOCXX_VERSION_EXTRA})
 set(MONGOCXX_INLINE_NAMESPACE "v${MONGOCXX_ABI_VERSION}")
@@ -43,8 +45,11 @@ set(mongocxx_sources
     cursor.cpp
     database.cpp
     exception/error_code.cpp
-    exception/server_error_code.cpp
     exception/operation_exception.cpp
+    exception/server_error_code.cpp
+    gridfs/bucket.cpp
+    gridfs/downloader.cpp
+    gridfs/uploader.cpp
     hint.cpp
     insert_many_builder.cpp
     instance.cpp
@@ -61,15 +66,20 @@ set(mongocxx_sources
     options/client.cpp
     options/count.cpp
     options/create_collection.cpp
+    options/create_view.cpp
     options/delete.cpp
     options/distinct.cpp
-    options/find.cpp
     options/find_one_and_delete.cpp
     options/find_one_and_replace.cpp
     options/find_one_and_update.cpp
+    options/find.cpp
+    options/gridfs/bucket.cpp
+    options/gridfs/upload.cpp
     options/index.cpp
     options/insert.cpp
     options/modify_collection.cpp
+    options/pool.cpp
+    options/private/rewriter.cpp
     options/ssl.cpp
     options/update.cpp
     pipeline.cpp
@@ -80,10 +90,12 @@ set(mongocxx_sources
     read_preference.cpp
     result/bulk_write.cpp
     result/delete.cpp
+    result/gridfs/upload.cpp
     result/insert_many.cpp
     result/insert_one.cpp
     result/replace_one.cpp
     result/update.cpp
+    third_party/md5.cpp
     uri.cpp
     validation_criteria.cpp
     write_concern.cpp
@@ -165,11 +177,7 @@ install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     DESTINATION ${MONGOCXX_HEADER_INSTALL_DIR}
     COMPONENT dev
     FILES_MATCHING
-        PATTERN "*.h"
         PATTERN "*.hpp"
-        REGEX ".+/mock" EXCLUDE
-        REGEX ".+/private" EXCLUDE
-        REGEX ".+/test" EXCLUDE
 )
 
 install(FILES
@@ -178,12 +186,14 @@ install(FILES
     COMPONENT dev
 )
 
-install(TARGETS
-    mongocxx
-    RUNTIME DESTINATION bin COMPONENT runtime
-    LIBRARY DESTINATION lib COMPONENT runtime
-    ARCHIVE DESTINATION lib COMPONENT dev
-)
+if (BUILD_SHARED_LIBS)
+    install(TARGETS
+        mongocxx
+        RUNTIME DESTINATION bin COMPONENT runtime
+        LIBRARY DESTINATION lib COMPONENT runtime
+        ARCHIVE DESTINATION lib COMPONENT dev
+    )
+endif()
 
 install(TARGETS
     mongocxx_static

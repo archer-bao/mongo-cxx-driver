@@ -16,8 +16,8 @@
 
 #include <chrono>
 #include <cstdint>
-#include <stdexcept>
 #include <memory>
+#include <stdexcept>
 
 #include <bsoncxx/stdx/optional.hpp>
 #include <bsoncxx/stdx/string_view.hpp>
@@ -49,13 +49,13 @@ class uri;
 /// critical operations, clients can adjust the write concern to ensure better performance
 /// rather than persistence to the entire deployment.
 ///
-/// @see http://docs.mongodb.org/manual/core/write-concern/
+/// @see https://docs.mongodb.com/master/core/write-concern/
 ///
 class MONGOCXX_API write_concern {
    public:
     ///
     /// A class to represent the special case values for write_concern::nodes.
-    /// @see http://docs.mongodb.org/manual/reference/write-concern/#w-option
+    /// @see https://docs.mongodb.com/master/reference/write-concern/#w-option
     ///
     enum class level {
         k_default,
@@ -124,7 +124,7 @@ class MONGOCXX_API write_concern {
 
     ///
     /// Sets the acknowledge level.
-    /// @see http://docs.mongodb.org/manual/reference/write-concern/#w-option
+    /// @see https://docs.mongodb.com/master/reference/write-concern/#w-option
     ///
     /// @param confirm_level
     ///   Either level::k_unacknowledged, level::k_default, or level::k_majority.
@@ -134,16 +134,20 @@ class MONGOCXX_API write_concern {
     /// @warning Setting this to level::k_unacknowledged disables write acknowledgment and all other
     /// write concern options.
     ///
+    /// @throws mongocxx::exception for an unknown confirm_level.
+    ///
     void acknowledge_level(level confirm_level);
 
     ///
     /// Requires that a majority of the nodes in a replica set acknowledge a write operation before
-    /// it is considered a success. A timeout is required when setting this write concern.
+    /// it is considered a success.
     ///
     /// @param timeout
     ///   The amount of time to wait before the write operation times out if it cannot reach
-    ///   the majority of nodes in the replica set.
+    ///   the majority of nodes in the replica set. If the value is zero, then no timeout is set.
     ///
+    /// @throws mongocxx::logic_error for an invalid timeout value.
+    //
     void majority(std::chrono::milliseconds timeout);
 
     ///
@@ -162,9 +166,10 @@ class MONGOCXX_API write_concern {
     /// concern cannot be satisfied within the timeout, the operation is considered a failure.
     ///
     /// @param timeout
-    ///   The timeout (in milliseconds) for this write concern.
+    ///   The timeout (in milliseconds) for this write concern. If the value is zero, then no
+    ///   timeout is set.
     ///
-    /// @throw exception::write
+    /// @throws mongocxx::logic_error for an invalid timeout value.
     ///
     void timeout(std::chrono::milliseconds timeout);
 
@@ -180,7 +185,7 @@ class MONGOCXX_API write_concern {
     /// This value will be unset iff the acknowledge_level is set instead.
     /// This is unset by default.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/write-concern/#w-option
+    /// @see https://docs.mongodb.com/master/reference/write-concern/#w-option
     ///
     /// @return The number of required nodes.
     ///
@@ -191,7 +196,7 @@ class MONGOCXX_API write_concern {
     /// This value will be unset iff the nodes value is set instead.
     /// This is set by default.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/write-concern/#w-option
+    /// @see https://docs.mongodb.com/master/reference/write-concern/#w-option
     ///
     /// @return The acknowledgment level.
     ///
@@ -224,6 +229,19 @@ class MONGOCXX_API write_concern {
     friend collection;
     friend database;
     friend uri;
+
+    ///
+    /// @{
+    ///
+    /// Compares two write_concern objects for (in)-equality.
+    ///
+    /// @relates: write_concern
+    ///
+    friend MONGOCXX_API bool MONGOCXX_CALL operator==(const write_concern&, const write_concern&);
+    friend MONGOCXX_API bool MONGOCXX_CALL operator!=(const write_concern&, const write_concern&);
+    ///
+    /// @}
+    ///
 
     class MONGOCXX_PRIVATE impl;
 

@@ -40,7 +40,8 @@ int main(int, char**) {
     doc.append(kvp("garply", types::b_double{3.14159}));
 
     // We can also pass a variable number of keys to append.
-    doc.append(kvp("a key", "a value"), kvp("another key", "another value"),
+    doc.append(kvp("a key", "a value"),
+               kvp("another key", "another value"),
                kvp("moar keys", "moar values"));
 
     // Appending to arrays is simple, just append one or more bson values.
@@ -64,10 +65,14 @@ int main(int, char**) {
                    }),
                kvp("subarray key", [](sub_array subarr) {
                    // subarrays work similarly
-                   subarr.append(1, types::b_bool{false}, "hello", 5, [](sub_document subdoc) {
-                       // nesting works too!
-                       subdoc.append(kvp("such", "nesting"), kvp("much", "recurse"));
-                   });
+                   subarr.append(1,
+                                 types::b_bool{false},
+                                 "hello",
+                                 5,
+                                 [](sub_document subdoc) {
+                                     // nesting works too!
+                                     subdoc.append(kvp("such", "nesting"), kvp("much", "recurse"));
+                                 });
                }));
 
     // We can get a view of the resulting bson by calling view()

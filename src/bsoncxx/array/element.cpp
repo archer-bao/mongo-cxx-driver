@@ -18,18 +18,16 @@
 #include <cstring>
 #include <stdexcept>
 
-#include <bsoncxx/config/private/prelude.hpp>
+#include <bsoncxx/config/private/prelude.hh>
 
 namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
 namespace array {
 
-element::element() : document::element() {
-}
+element::element() : document::element() {}
 
 element::element(const std::uint8_t* raw, std::uint32_t length, std::uint32_t offset)
-    : document::element(raw, length, offset) {
-}
+    : document::element(raw, length, offset) {}
 
 }  // namespace document
 BSONCXX_INLINE_NAMESPACE_END

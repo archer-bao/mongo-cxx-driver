@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
 #include "helpers.hpp"
 
 #include <cstddef>
 #include <string>
 
-#include <mongocxx/instance.hpp>
-#include <mongocxx/private/libmongoc.hpp>
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
 #include <mongocxx/options/ssl.hpp>
 #include <mongocxx/pool.hpp>
+#include <mongocxx/private/libmongoc.hh>
 
 using namespace mongocxx;
 
@@ -83,7 +83,7 @@ TEST_CASE(
     ssl_opts.crl_file(crl_file);
     ssl_opts.allow_invalid_certificates(allow_invalid_certificates);
 
-    ::mongoc_ssl_opt_t interposed = {0};
+    ::mongoc_ssl_opt_t interposed = {};
 
     client_pool_set_ssl_opts->interpose(
         [&](::mongoc_client_pool_t*, const ::mongoc_ssl_opt_t* opts) {
@@ -91,7 +91,8 @@ TEST_CASE(
             interposed = *opts;
         });
 
-    pool p{uri{"mongodb://mongodb.example.com:9999?ssl=true"}, std::move(ssl_opts)};
+    pool p{uri{"mongodb://mongodb.example.com:9999/?ssl=true"},
+           options::client().ssl_opts(ssl_opts)};
 
     REQUIRE(set_ssl_opts_called);
     REQUIRE(interposed.pem_file == pem_file);

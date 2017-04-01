@@ -20,10 +20,13 @@
 #include <bsoncxx/document/view_or_value.hpp>
 #include <bsoncxx/string/view_or_value.hpp>
 #include <mongocxx/collection.hpp>
-#include <mongocxx/options/modify_collection.hpp>
+#include <mongocxx/gridfs/bucket.hpp>
 #include <mongocxx/options/create_collection.hpp>
-#include <mongocxx/write_concern.hpp>
+#include <mongocxx/options/create_view.hpp>
+#include <mongocxx/options/gridfs/bucket.hpp>
+#include <mongocxx/options/modify_collection.hpp>
 #include <mongocxx/read_preference.hpp>
+#include <mongocxx/write_concern.hpp>
 
 #include <mongocxx/config/prelude.hpp>
 
@@ -83,30 +86,65 @@ class MONGOCXX_API database {
     ///
     /// Runs a command against this database.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/method/db.runCommand/
+    /// @see https://docs.mongodb.com/master/reference/method/db.runCommand/
     ///
     /// @param command document representing the command to be run.
     /// @return the result of executing the command.
-    /// @throws exception::operation if the operation fails.
+    ///
+    /// @throws mongocxx::operation_exception if the operation fails.
     ///
     bsoncxx::document::value run_command(bsoncxx::document::view_or_value command);
 
     ///
     /// Explicitly creates a collection in this database with the specified options.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/method/db.createCollection/
+    /// @see https://docs.mongodb.com/master/reference/command/create/
     ///
     /// @param name the new collection's name.
     /// @param options the options for the new collection.
+    ///
+    /// @throws mongocxx::operation_exception if the operation fails.
+    ///
+    /// @note
+    ///   In order to pass a write concern to this, you must use the database
+    ///   level set write concern - database::write_concern(wc). (MongoDB
+    ///   3.4+)
     ///
     class collection create_collection(
         bsoncxx::string::view_or_value name,
         const options::create_collection& options = options::create_collection());
 
     ///
+    /// Creates a non-materialized view in this database with the specified options.
+    /// Non-materialized views are represented by the @c collection objects, and support many of the
+    /// same read-only operations that regular collections do.
+    ///
+    /// @see https://docs.mongodb.com/master/core/views/
+    ///
+    /// @param name the name of the view to be created.
+    /// @param view_on
+    ///   the name of the source view or collection in this database from which to create the view.
+    /// @param options the options for the new view.
+    ///
+    /// @throws mongocxx::operation_exception if the operation fails.
+    ///
+    /// @note
+    ///   In order to pass a write concern to this, you must use the database
+    ///   level set write concern - database::write_concern(wc). (MongoDB
+    ///   3.4+)
+    ///
+    class collection create_view(bsoncxx::string::view_or_value name,
+                                 bsoncxx::string::view_or_value view_on,
+                                 const options::create_view& options = options::create_view());
+
+    ///
     /// Modify an existing collection.
     ///
-    /// @see https://docs.mongodb.org/manual/reference/command/collMod/
+    /// @deprecated
+    ///   This method is deprecated.  To modify an existing collection, invoke the "collMod" command
+    ///   with database::run_command().
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/collMod/
     ///
     /// @param name the name of the collection to be modified.
     /// @param options the modifications to be performed.
@@ -120,7 +158,14 @@ class MONGOCXX_API database {
     ///
     /// Drops the database and all its collections.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/method/db.dropDatabase/
+    /// @throws mongocxx::operation_exception if the operation fails.
+    //
+    /// @see https://docs.mongodb.com/manual/reference/command/dropDatabase/
+    ///
+    /// @note
+    ///   In order to pass a write concern to this, you must use the database
+    ///   level set write concern - database::write_concern(wc). (MongoDB
+    ///   3.4+)
     ///
     void drop();
 
@@ -131,8 +176,8 @@ class MONGOCXX_API database {
     ///
     /// @return bool whether the collection exists in this database.
     ///
-    /// @throws exception::operation if the underlying 'listCollections'
-    ///   command fails.
+    /// @throws mongocxx::operation_exception if the underlying 'listCollections'
+    /// command fails.
     ///
     bool has_collection(bsoncxx::string::view_or_value name) const;
 
@@ -144,10 +189,10 @@ class MONGOCXX_API database {
     ///
     /// @return mongocxx::cursor containing the collection information.
     ///
-    /// @throws exception::operation if the underlying 'listCollections'
-    ///   command fails.
+    /// @throws mongocxx::operation_exception if the underlying 'listCollections'
+    /// command fails.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/command/listCollections/
+    /// @see https://docs.mongodb.com/master/reference/command/listCollections/
     ///
     cursor list_collections(bsoncxx::document::view_or_value filter = {});
 
@@ -168,7 +213,7 @@ class MONGOCXX_API database {
     /// @param rc
     ///   The new @c read_concern
     ///
-    /// @see https://docs.mongodb.org/manual/reference/read-concern/
+    /// @see https://docs.mongodb.com/master/reference/read-concern/
     ///
     void read_concern(class read_concern rc);
 
@@ -189,7 +234,7 @@ class MONGOCXX_API database {
     /// from this database, but do affect new ones. New collections will receive a copy of the
     /// new read_preference for this database upon instantiation.
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @see https://docs.mongodb.com/master/core/read-preference/
     ///
     /// @param rp the new read_preference.
     ///
@@ -198,7 +243,7 @@ class MONGOCXX_API database {
     ///
     /// The current read preference for this database.
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @see https://docs.mongodb.com/master/core/read-preference/
     ///
     /// @return the current read_preference
     ///
@@ -238,6 +283,23 @@ class MONGOCXX_API database {
     /// @return the collection.
     ///
     MONGOCXX_INLINE class collection operator[](bsoncxx::string::view_or_value name) const;
+
+    ///
+    /// Access a GridFS bucket within this database.
+    ///
+    /// @param options
+    ///   The options for the bucket.
+    ///
+    /// @return
+    ///   The GridFS bucket.
+    ///
+    /// @note
+    ///   See the class comment for `gridfs::bucket` for more information about GridFS.
+    ///
+    /// TODO CXX-1234: Document exceptions thrown.
+    ///
+    class gridfs::bucket gridfs_bucket(
+        const options::gridfs::bucket& options = options::gridfs::bucket()) const;
 
    private:
     friend class client;

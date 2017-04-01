@@ -12,18 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "catch.hpp"
 #include "helpers.hpp"
 
-#include <mongocxx/database.hpp>
-
 #include <bsoncxx/builder/stream/helpers.hpp>
+#include <bsoncxx/test_util/catch.hh>
 #include <mongocxx/client.hpp>
+#include <mongocxx/database.hpp>
 #include <mongocxx/exception/logic_error.hpp>
+#include <mongocxx/exception/operation_exception.hpp>
 #include <mongocxx/instance.hpp>
 #include <mongocxx/options/modify_collection.hpp>
-#include <mongocxx/private/libmongoc.hpp>
-#include <mongocxx/private/libbson.hpp>
+#include <mongocxx/private/libbson.hh>
+#include <mongocxx/private/libmongoc.hh>
+#include <mongocxx/test_util/client_helpers.hh>
 #include <mongocxx/validation_criteria.hpp>
 
 using namespace mongocxx;
@@ -116,7 +117,9 @@ TEST_CASE("A database", "[database]") {
 
     SECTION("throws an exception when dropping causes an error") {
         database_drop->interpose([&](mongoc_database_t*, bson_error_t* error) {
-            bson_set_error(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
+            bson_set_error(error,
+                           MONGOC_ERROR_COMMAND,
+                           MONGOC_ERROR_COMMAND_INVALID_ARG,
                            "expected error from mock");
             return false;
         });
@@ -128,7 +131,9 @@ TEST_CASE("A database", "[database]") {
     SECTION("throws an exception when has_collection causes an error") {
         database_has_collection->interpose(
             [](mongoc_database_t*, const char*, bson_error_t* error) {
-                bson_set_error(error, MONGOC_ERROR_COMMAND, MONGOC_ERROR_COMMAND_INVALID_ARG,
+                bson_set_error(error,
+                               MONGOC_ERROR_COMMAND,
+                               MONGOC_ERROR_COMMAND_INVALID_ARG,
                                "expected error from mock");
                 return false;
             });
@@ -193,9 +198,9 @@ TEST_CASE("A database", "[database]") {
                 static_cast<mongoc_read_mode_t>(read_preference::read_mode::k_secondary_preferred));
         });
 
-        database_get_preference->interpose([&](const mongoc_database_t*) {
-            return saved_preference.get();
-        }).forever();
+        database_get_preference
+            ->interpose([&](const mongoc_database_t*) { return saved_preference.get(); })
+            .forever();
 
         mongo_database.read_preference(std::move(preference));
         REQUIRE(called);
@@ -260,8 +265,10 @@ TEST_CASE("A database", "[database]") {
                                        << "foo" << 5 << bsoncxx::builder::stream::finalize;
         libbson::scoped_bson_t bson_doc{doc.view()};
 
-        database_command_simple->interpose([&](mongoc_database_t*, const bson_t*,
-                                               const mongoc_read_prefs_t*, bson_t* reply,
+        database_command_simple->interpose([&](mongoc_database_t*,
+                                               const bson_t*,
+                                               const mongoc_read_prefs_t*,
+                                               bson_t* reply,
                                                bson_error_t*) {
             called = true;
             ::bson_copy_to(bson_doc.bson(), reply);
@@ -285,17 +292,19 @@ TEST_CASE("Database integration tests", "[database]") {
     database database = mongo_client[database_name];
     stdx::string_view collection_name{"collection"};
 
-    SECTION("A database may create a collection via create_collection") {
-        SECTION("without any options") {
-            database[collection_name].drop();
+    auto case_insensitive_collation = document{} << "locale"
+                                                 << "en_US"
+                                                 << "strength" << 2 << finalize;
 
+    SECTION("A database may create a collection via create_collection") {
+        database[collection_name].drop();
+
+        SECTION("without any options") {
             collection obtained_collection = database.create_collection(collection_name);
             REQUIRE(obtained_collection.name() == collection_name);
         }
 
         SECTION("with options") {
-            database[collection_name].drop();
-
             options::create_collection opts;
             opts.capped(true);
             opts.size(256);
@@ -306,35 +315,85 @@ TEST_CASE("Database integration tests", "[database]") {
             REQUIRE(obtained_collection.name() == collection_name);
         }
 
-        SECTION("but raises exception when collection already exists") {
-            database[collection_name].drop();
+        SECTION("with collation") {
+            options::create_collection opts;
+            opts.collation(case_insensitive_collation.view());
 
+            if (test_util::supports_collation(mongo_client)) {
+                collection obtained_collection = database.create_collection(collection_name, opts);
+                REQUIRE(obtained_collection.insert_one(document{} << "x"
+                                                                  << "foo"
+                                                                  << finalize));
+                REQUIRE(obtained_collection.find_one(document{} << "x"
+                                                                << "FOO"
+                                                                << finalize));
+            } else {
+                // The server doesn't support collation.
+                REQUIRE_THROWS_AS(database.create_collection(collection_name, opts),
+                                  operation_exception);
+            }
+        }
+
+        SECTION("but raises exception when collection already exists") {
             database.create_collection(collection_name);
 
             REQUIRE_THROWS(database.create_collection(collection_name));
         }
-
-        database[collection_name].drop();
     }
 
     SECTION("A collection may be modified via modify_collection") {
+        database[collection_name].drop();
         database.create_collection(collection_name);
 
-        auto rule = document{} << "email" << open_document << "$exists"
-                               << "true" << close_document << finalize;
+        SECTION("index can be modified") {
+            auto key_pattern = document{} << "a" << 1 << finalize;
 
-        validation_criteria criteria;
-        criteria.rule(rule.view());
+            database[collection_name].create_index(
+                key_pattern.view(), options::index{}.expire_after(std::chrono::seconds{1}));
 
-        options::modify_collection opts;
-        opts.validation_criteria(criteria);
+            options::modify_collection opts;
+            opts.index(key_pattern.view(), std::chrono::seconds{2});
 
-        auto res = database.modify_collection(collection_name, opts);
+            database.modify_collection(collection_name, opts);
 
-        auto cursor = database.list_collections();
-        for (auto&& coll : cursor) {
-            if (coll["name"].get_utf8().value == collection_name) {
-                REQUIRE(coll["options"]["validator"].get_document().value == rule);
+            auto cursor = database[collection_name].list_indexes();
+            for (auto&& index : cursor) {
+                if (index["key"].get_document().value == key_pattern.view()) {
+                    auto expire_after_seconds_ele = index["expireAfterSeconds"];
+                    if (expire_after_seconds_ele.type() == bsoncxx::type::k_int32) {
+                        REQUIRE(expire_after_seconds_ele.get_int32().value == 2);
+                    } else {
+                        REQUIRE(expire_after_seconds_ele.type() == bsoncxx::type::k_int64);
+                        REQUIRE(expire_after_seconds_ele.get_int64().value == 2);
+                    }
+                }
+            }
+        }
+
+        SECTION("validation_criteria can be modified") {
+            auto rule = document{} << "email" << open_document << "$exists"
+                                   << "true" << close_document << finalize;
+
+            validation_criteria criteria;
+            criteria.rule(rule.view());
+
+            options::modify_collection opts;
+            opts.validation_criteria(criteria);
+
+            if (test_util::get_max_wire_version(mongo_client) >= 4) {
+                // The server supports document validation.
+                REQUIRE_NOTHROW(database.modify_collection(collection_name, opts));
+
+                auto cursor = database.list_collections();
+                for (auto&& coll : cursor) {
+                    if (coll["name"].get_utf8().value == collection_name) {
+                        REQUIRE(coll["options"]["validator"].get_document().value == rule);
+                    }
+                }
+            } else {
+                // The server does not support document validation.
+                REQUIRE_THROWS_AS(database.modify_collection(collection_name, opts),
+                                  operation_exception);
             }
         }
     }
@@ -368,6 +427,51 @@ TEST_CASE("Database integration tests", "[database]") {
             rc_db.read_concern(set_rc);
 
             REQUIRE(rc_db.read_concern().acknowledge_level() == local);
+        }
+    }
+
+    SECTION("A database may create a view via create_view") {
+        stdx::string_view view_name{"view"};
+        database[collection_name].drop();
+        database[view_name].drop();
+
+        database[collection_name].insert_one(document{} << "x"
+                                                        << "foo"
+                                                        << finalize);
+        database[collection_name].insert_one(document{} << "x"
+                                                        << "bar"
+                                                        << finalize);
+
+        SECTION("View creation with a pipeline") {
+            collection view = database.create_view(
+                view_name,
+                collection_name,
+                options::create_view().pipeline(std::move(pipeline({}).limit(1))));
+
+            if (test_util::get_max_wire_version(mongo_client) >= 5) {
+                // The server supports views.
+                REQUIRE(view.count(bsoncxx::document::view{}) == 1);
+            } else {
+                // The server doesn't support views. On these versions of the server, view creation
+                // requests are treated as ordinary collection creation requests.
+                REQUIRE(view.count(bsoncxx::document::view{}) == 0);
+            }
+        }
+
+        SECTION("View creation with collation") {
+            options::create_view opts;
+            opts.collation(case_insensitive_collation.view());
+
+            if (test_util::supports_collation(mongo_client)) {
+                collection obtained_view = database.create_view(view_name, collection_name, opts);
+                REQUIRE(obtained_view.find_one(document{} << "x"
+                                                          << "FOO"
+                                                          << finalize));
+            } else {
+                // The server doesn't support collation.
+                REQUIRE_THROWS_AS(database.create_view(view_name, collection_name, opts),
+                                  operation_exception);
+            }
         }
     }
 }

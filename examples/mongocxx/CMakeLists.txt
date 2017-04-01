@@ -24,16 +24,21 @@ link_directories(
 set(MONGOCXX_EXAMPLES
     aggregate.cpp
     bulk_write.cpp
-    create.cpp
     connect.cpp
+    create.cpp
     document_validation.cpp
     exception.cpp
+    get_values_from_documents.cpp
+    gridfs.cpp
     index.cpp
     inserted_id.cpp
+    instance_management.cpp
     query.cpp
     query_projection.cpp
     remove.cpp
+    tailable_cursor.cpp
     update.cpp
+    usage_overview.cpp
     view_or_value_variant.cpp
 )
 
@@ -43,5 +48,11 @@ foreach(EXAMPLE_SRC ${MONGOCXX_EXAMPLES})
     target_link_libraries(${EXAMPLE_TARGET} mongocxx)
     set(MONGOCXX_EXAMPLE_EXECUTABLES ${MONGOCXX_EXAMPLE_EXECUTABLES} ${EXAMPLE_TARGET})
 endforeach(EXAMPLE_SRC)
+
+add_executable(pool pool.cpp)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(pool mongocxx Threads::Threads)
+set (MONGOCXX_EXAMPLE_EXECUTABLES ${MONGOCXX_EXAMPLE_EXECUTABLES} pool)
 
 set(MONGOCXX_EXAMPLE_EXECUTABLES ${MONGOCXX_EXAMPLE_EXECUTABLES} PARENT_SCOPE)

@@ -14,9 +14,10 @@
 
 #pragma once
 
+#include <chrono>
 #include <cstdint>
-#include <string>
 #include <memory>
+#include <string>
 
 #include <bsoncxx/document/view_or_value.hpp>
 #include <bsoncxx/stdx/optional.hpp>
@@ -44,12 +45,14 @@ class uri;
 /// Read preference can be broadly specified by setting a mode. It is also possible to
 /// set tags in the read preference for more granular control, and to target specific members of a
 /// replica set via attributes other than their current state as a primary or secondary node.
+/// Furthermore, it is also possible to set a staleness threshold, such that the read is limited to
+/// targeting secondaries whose staleness is less than or equal to the given threshold.
 ///
 /// Read preferences are ignored for direct connections to a single mongod instance. However,
 /// in order to perform read operations on a direct connection to a secondary member of a replica
 /// set, you must set a read preference that allows reading from secondaries.
 ///
-/// @see http://docs.mongodb.org/manual/core/read-preference/
+/// @see https://docs.mongodb.com/master/core/read-preference/
 ///
 class MONGOCXX_API read_preference {
    public:
@@ -62,7 +65,7 @@ class MONGOCXX_API read_preference {
     /// replicate operations from the primary with some delay. Ensure that your application
     /// can tolerate stale data if you choose to use a non-primary mode.
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/#read-preference-modes
+    /// @see https://docs.mongodb.com/master/core/read-preference/#read-preference-modes
     ///
     enum class read_mode : std::uint8_t {
         ///
@@ -92,12 +95,19 @@ class MONGOCXX_API read_preference {
     };
 
     ///
+    /// Constructs a new read_preference with read_mode set to k_primary.
+    ///
+    read_preference();
+
+    ///
     /// Constructs a new read_preference.
     ///
     /// @param mode
-    ///   Optional parameter to specify the read_mode, defaults to k_primary.
+    ///   Sspecifies the read_mode.
     ///
-    explicit read_preference(read_mode mode = read_mode::k_primary);
+    /// @deprecated The constructor with no arguments and the method mode() should be used.
+    ///
+    read_preference(read_mode mode);
 
     ///
     /// Constructs a new read_preference with tags.
@@ -107,7 +117,9 @@ class MONGOCXX_API read_preference {
     /// @param tags
     ///   A document representing tags to use for the read_preference.
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/#tag-sets
+    /// @see https://docs.mongodb.com/master/core/read-preference/#tag-sets
+    ///
+    /// @deprecated The tags() method should be used instead.
     ///
     read_preference(read_mode mode, bsoncxx::document::view_or_value tags);
 
@@ -142,7 +154,11 @@ class MONGOCXX_API read_preference {
     /// @param mode
     ///   The new read preference mode.
     ///
-    void mode(read_mode mode);
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    read_preference& mode(read_mode mode);
 
     ///
     /// Returns the current read_mode for this read_preference.
@@ -157,22 +173,82 @@ class MONGOCXX_API read_preference {
     /// @param tags
     ///   Document representing the tags.
     ///
-    void tags(bsoncxx::document::view_or_value tags);
+    /// @see https://docs.mongodb.com/master/core/read-preference/#tag-sets
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    read_preference& tags(bsoncxx::document::view_or_value tags);
 
     ///
     /// Returns the current tags for this read_preference.
     ///
     /// @return The optionally set current tags.
     ///
+    /// @see https://docs.mongodb.com/master/core/read-preference/#tag-sets
+    ///
     stdx::optional<bsoncxx::document::view> tags() const;
+
+    ///
+    /// Sets the max staleness setting for this read_preference.  Secondary
+    /// servers with an estimated lag greater than this value will be excluded
+    /// from selection under modes that allow secondaries.
+    ///
+    /// Max staleness must be at least 90 seconds, and also at least
+    /// the sum (in seconds) of the client's heartbeatFrequencyMS and the
+    /// server's idle write period, which is 10 seconds.  For general use,
+    /// 90 seconds is the effective minimum.  If less, an exception will be
+    /// thrown when an operation is attempted.
+    ///
+    /// Max staleness may only be used with MongoDB version 3.4 or later.
+    /// If used with an earlier version, an exception will be thrown when an
+    /// operation is attempted.
+    ///
+    /// @note
+    ///     The max-staleness feature is designed to prevent badly-lagging
+    ///     servers from being selected.  The staleness estimate is
+    ///     imprecise and shouldn't be used to try to select "up-to-date"
+    ///     secondaries.
+    ///
+    /// @param max_staleness
+    ///    The new max staleness setting.  It must be positive.
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @throws mongocxx::logic_error if the argument is invalid.
+    ///
+    read_preference& max_staleness(std::chrono::seconds max_staleness);
+
+    ///
+    /// Returns the current max staleness setting for this read_preference.
+    ///
+    /// @return The optionally current max staleness setting.
+    ///
+    stdx::optional<std::chrono::seconds> max_staleness() const;
 
    private:
     friend client;
     friend collection;
     friend database;
     friend uri;
-    friend MONGOCXX_API bool MONGOCXX_CALL
-    operator==(const read_preference&, const read_preference&);
+
+    ///
+    /// @{
+    ///
+    /// Compares two read_preference objects for (in)-equality.
+    ///
+    /// @relates: read_preference
+    ///
+    friend MONGOCXX_API bool MONGOCXX_CALL operator==(const read_preference&,
+                                                      const read_preference&);
+    friend MONGOCXX_API bool MONGOCXX_CALL operator!=(const read_preference&,
+                                                      const read_preference&);
+    ///
+    /// @}
+    ///
 
     class MONGOCXX_PRIVATE impl;
 

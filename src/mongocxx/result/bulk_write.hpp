@@ -35,9 +35,7 @@ class MONGOCXX_API bulk_write {
    public:
     using id_map = std::map<std::size_t, bsoncxx::document::element>;
 
-    ///
-    /// @todo documment this method
-    ///
+    // This constructor is public for testing purposes only
     explicit bulk_write(bsoncxx::document::value raw_response);
 
     ///
@@ -58,6 +56,8 @@ class MONGOCXX_API bulk_write {
     /// Gets the number of documents that were modified during this operation.
     ///
     /// @return The number of documents that were modified.
+    ///
+    /// @throws with server versions below 2.6 due to the field `nModified` not being returned.
     ///
     std::int32_t modified_count() const;
 

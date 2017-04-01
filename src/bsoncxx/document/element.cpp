@@ -25,9 +25,9 @@
 #include <bsoncxx/types.hpp>
 #include <bsoncxx/types/value.hpp>
 
-#include <bsoncxx/config/private/prelude.hpp>
+#include <bsoncxx/config/private/prelude.hh>
 
-#define CITER                \
+#define BSONCXX_CITER        \
     bson_iter_t iter;        \
     iter.raw = _raw;         \
     iter.len = _length;      \
@@ -45,12 +45,10 @@ namespace bsoncxx {
 BSONCXX_INLINE_NAMESPACE_BEGIN
 namespace document {
 
-element::element() : _raw(nullptr), _length(0), _offset(0) {
-}
+element::element() : _raw(nullptr), _length(0), _offset(0) {}
 
 element::element(const std::uint8_t* raw, std::uint32_t length, std::uint32_t offset)
-    : _raw(raw), _length(length), _offset(offset) {
-}
+    : _raw(raw), _length(length), _offset(offset) {}
 
 const std::uint8_t* element::raw() const {
     return _raw;
@@ -78,7 +76,7 @@ bsoncxx::type element::type() const {
         throw bsoncxx::exception{error_code::k_unset_element};
     }
 
-    CITER;
+    BSONCXX_CITER;
     return static_cast<bsoncxx::type>(bson_iter_type(&iter));
 }
 
@@ -87,7 +85,7 @@ stdx::string_view element::key() const {
         throw bsoncxx::exception{error_code::k_unset_element};
     }
 
-    CITER;
+    BSONCXX_CITER;
 
     const char* key = bson_iter_key(&iter);
 
@@ -97,7 +95,7 @@ stdx::string_view element::key() const {
 types::b_binary element::get_binary() const {
     BSONCXX_TYPE_CHECK(k_binary);
 
-    CITER;
+    BSONCXX_CITER;
 
     bson_subtype_t type;
     std::uint32_t len;
@@ -111,7 +109,7 @@ types::b_binary element::get_binary() const {
 types::b_utf8 element::get_utf8() const {
     BSONCXX_TYPE_CHECK(k_utf8);
 
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t len;
     const char* val = bson_iter_utf8(&iter, &len);
@@ -121,17 +119,17 @@ types::b_utf8 element::get_utf8() const {
 
 types::b_double element::get_double() const {
     BSONCXX_TYPE_CHECK(k_double);
-    CITER;
+    BSONCXX_CITER;
     return types::b_double{bson_iter_double(&iter)};
 }
 types::b_int32 element::get_int32() const {
     BSONCXX_TYPE_CHECK(k_int32);
-    CITER;
+    BSONCXX_CITER;
     return types::b_int32{bson_iter_int32(&iter)};
 }
 types::b_int64 element::get_int64() const {
     BSONCXX_TYPE_CHECK(k_int64);
-    CITER;
+    BSONCXX_CITER;
     return types::b_int64{bson_iter_int64(&iter)};
 }
 types::b_undefined element::get_undefined() const {
@@ -140,22 +138,31 @@ types::b_undefined element::get_undefined() const {
 }
 types::b_oid element::get_oid() const {
     BSONCXX_TYPE_CHECK(k_oid);
-    CITER;
+    BSONCXX_CITER;
 
     const bson_oid_t* boid = bson_iter_oid(&iter);
     oid v(reinterpret_cast<const char*>(boid->bytes), sizeof(boid->bytes));
 
     return types::b_oid{v};
 }
+types::b_decimal128 element::get_decimal128() const {
+    BSONCXX_TYPE_CHECK(k_decimal128);
+    BSONCXX_CITER;
+
+    bson_decimal128_t d128;
+    bson_iter_decimal128(&iter, &d128);
+
+    return types::b_decimal128{decimal128{d128.high, d128.low}};
+}
 
 types::b_bool element::get_bool() const {
     BSONCXX_TYPE_CHECK(k_bool);
-    CITER;
+    BSONCXX_CITER;
     return types::b_bool{bson_iter_bool(&iter)};
 }
 types::b_date element::get_date() const {
     BSONCXX_TYPE_CHECK(k_date);
-    CITER;
+    BSONCXX_CITER;
     return types::b_date{std::chrono::milliseconds{bson_iter_date_time(&iter)}};
 }
 types::b_null element::get_null() const {
@@ -165,7 +172,7 @@ types::b_null element::get_null() const {
 
 types::b_regex element::get_regex() const {
     BSONCXX_TYPE_CHECK(k_regex);
-    CITER;
+    BSONCXX_CITER;
 
     const char* options;
     const char* regex = bson_iter_regex(&iter, &options);
@@ -175,7 +182,7 @@ types::b_regex element::get_regex() const {
 
 types::b_dbpointer element::get_dbpointer() const {
     BSONCXX_TYPE_CHECK(k_dbpointer);
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t collection_len;
     const char* collection;
@@ -189,7 +196,7 @@ types::b_dbpointer element::get_dbpointer() const {
 
 types::b_code element::get_code() const {
     BSONCXX_TYPE_CHECK(k_code);
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t len;
     const char* code = bson_iter_code(&iter, &len);
@@ -199,7 +206,7 @@ types::b_code element::get_code() const {
 
 types::b_symbol element::get_symbol() const {
     BSONCXX_TYPE_CHECK(k_symbol);
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t len;
     const char* symbol = bson_iter_symbol(&iter, &len);
@@ -209,7 +216,7 @@ types::b_symbol element::get_symbol() const {
 
 types::b_codewscope element::get_codewscope() const {
     BSONCXX_TYPE_CHECK(k_codewscope);
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t code_len;
     const uint8_t* scope_ptr;
@@ -222,7 +229,7 @@ types::b_codewscope element::get_codewscope() const {
 
 types::b_timestamp element::get_timestamp() const {
     BSONCXX_TYPE_CHECK(k_timestamp);
-    CITER;
+    BSONCXX_CITER;
 
     uint32_t timestamp;
     uint32_t increment;
@@ -242,7 +249,7 @@ types::b_maxkey element::get_maxkey() const {
 
 types::b_document element::get_document() const {
     BSONCXX_TYPE_CHECK(k_document);
-    CITER;
+    BSONCXX_CITER;
 
     const std::uint8_t* buf;
     std::uint32_t len;
@@ -254,7 +261,7 @@ types::b_document element::get_document() const {
 
 types::b_array element::get_array() const {
     BSONCXX_TYPE_CHECK(k_array);
-    CITER;
+    BSONCXX_CITER;
 
     const std::uint8_t* buf;
     std::uint32_t len;
@@ -277,13 +284,15 @@ types::value element::get_value() const {
 }
 
 element element::operator[](stdx::string_view key) const {
-    if (type() != bsoncxx::type::k_document) return element();
+    if (_raw == nullptr || type() != bsoncxx::type::k_document)
+        return element();
     document::view doc = get_document();
     return doc[key];
 }
 
 array::element element::operator[](std::uint32_t i) const {
-    if (type() != bsoncxx::type::k_array) return array::element();
+    if (_raw == nullptr || type() != bsoncxx::type::k_array)
+        return array::element();
     array::view arr = get_array();
     return arr[i];
 }

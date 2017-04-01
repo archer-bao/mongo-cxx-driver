@@ -17,6 +17,7 @@
 #include <memory>
 
 #include <bsoncxx/document/view.hpp>
+#include <bsoncxx/stdx/optional.hpp>
 
 #include <mongocxx/config/prelude.hpp>
 
@@ -53,29 +54,60 @@ class MONGOCXX_API cursor {
     ///
     ~cursor();
 
-    /// A cursor::iterator that points to the begining of the results.
+    ///
+    /// A cursor::iterator that points to the beginning of any available
+    /// results.  If begin() is called more than once, the cursor::iterator
+    /// returned points to the next remaining result, not the result of
+    /// the original call to begin().
+    ///
+    /// For a tailable cursor, when cursor.begin() == cursor.end(), no
+    /// documents are available.  Each call to cursor.begin() checks again
+    /// for newly-available documents.
     ///
     /// @return the cursor::iterator
+    ///
+    /// @throws mongocxx::query_exception if the query failed
+    ///
     iterator begin();
 
-    /// A cursor::iterator that points to the end of the results.
+    ///
+    /// A cursor::iterator indicating cursor exhaustion, meaning that
+    /// no documents are available from the cursor.
     ///
     /// @return the cursor::iterator
+    ///
     iterator end();
 
    private:
     friend class collection;
     friend class client;
     friend class database;
+    friend class cursor::iterator;
 
-    MONGOCXX_PRIVATE cursor(void* cursor_ptr);
+    MONGOCXX_PRIVATE cursor(void* cursor_ptr,
+                            bsoncxx::stdx::optional<type> cursor_type = bsoncxx::stdx::nullopt);
 
     class MONGOCXX_PRIVATE impl;
     std::unique_ptr<impl> _impl;
 };
 
 ///
-/// Class representing an input iterator of documents in a MongoDB cursor result set.
+/// Class representing an input iterator of documents in a MongoDB cursor
+/// result set.
+///
+/// All non-end iterators derived from the same mongocxx::cursor move in
+/// lock-step.  Dereferencing any non-end() iterator always gives the first
+/// remaining document in the cursor.  Incrementing one non-end iterator is
+/// equivalent to incrementing them all.
+///
+/// An iterator is 'exhausted' when no documents are available. An
+/// end-iterator is always exhausted. A non-end iterator is exhausted when the
+/// originating mongocxx::cursor has no more documents.  When an iterator is
+/// exhausted, it must not be dereferenced or incremented.
+///
+/// For iterators of a tailable cursor, calling cursor.begin() may revive an
+/// exhausted iterator so that it no longer compares equal to the
+/// end-iterator.
 ///
 class MONGOCXX_API cursor::iterator
     : public std::iterator<std::input_iterator_tag, bsoncxx::document::view> {
@@ -91,12 +123,16 @@ class MONGOCXX_API cursor::iterator
     const bsoncxx::document::view* operator->() const;
 
     ///
-    /// Postfix increments the iterator to move to the next document.
+    /// Pre-increments the iterator to move to the next document.
+    ///
+    /// @throws mongocxx::query_exception if the query failed
     ///
     iterator& operator++();
 
     ///
-    /// Prefix increments the iterator to move to the next document.
+    /// Post-increments the iterator to move to the next document.
+    ///
+    /// @throws mongocxx::query_exception if the query failed
     ///
     void operator++(int);
 
@@ -106,7 +142,8 @@ class MONGOCXX_API cursor::iterator
     ///
     /// @{
     ///
-    /// Compare two iterators for (in)-equality
+    /// Compare two iterators for (in)-equality.  Iterators compare equal if
+    /// they point to the same underlying cursor or if both are exhausted.
     ///
     /// @relates iterator
     ///
@@ -116,10 +153,12 @@ class MONGOCXX_API cursor::iterator
     /// @}
     ///
 
+    MONGOCXX_PRIVATE bool is_exhausted() const;
+
     MONGOCXX_PRIVATE explicit iterator(cursor* cursor);
 
+    // If this pointer is null, the iterator is considered "past-the-end".
     cursor* _cursor;
-    bsoncxx::document::view _doc;
 };
 
 MONGOCXX_INLINE_NAMESPACE_END

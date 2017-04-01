@@ -15,9 +15,9 @@
 #include <mongocxx/options/index.hpp>
 
 #include <bsoncxx/stdx/make_unique.hpp>
-#include <mongocxx/private/libmongoc.hpp>
+#include <mongocxx/private/libmongoc.hh>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
@@ -37,6 +37,11 @@ index& index::unique(bool unique) {
 
 index& index::name(bsoncxx::string::view_or_value name) {
     _name = std::move(name);
+    return *this;
+}
+
+index& index::collation(bsoncxx::document::view collation) {
+    _collation = collation;
     return *this;
 }
 
@@ -121,6 +126,10 @@ const stdx::optional<bool>& index::unique() const {
 
 const stdx::optional<bsoncxx::string::view_or_value>& index::name() const {
     return _name;
+}
+
+const stdx::optional<bsoncxx::document::view>& index::collation() const {
+    return _collation;
 }
 
 const stdx::optional<bool>& index::sparse() const {

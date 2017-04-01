@@ -41,6 +41,10 @@ class MONGOCXX_API insert {
     /// @param bypass_document_validation
     ///   Whether or not to bypass document validation
     ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
     insert& bypass_document_validation(bool bypass_document_validation);
 
     ///
@@ -56,7 +60,11 @@ class MONGOCXX_API insert {
     /// @param wc
     ///   The new write_concern.
     ///
-    /// @see http://docs.mongodb.org/manual/core/write-concern/
+    /// @see https://docs.mongodb.com/master/core/write-concern/
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
     ///
     insert& write_concern(class write_concern wc);
 
@@ -65,7 +73,7 @@ class MONGOCXX_API insert {
     ///
     /// @return The current write_concern.
     ///
-    /// @see http://docs.mongodb.org/manual/core/write-concern/
+    /// @see https://docs.mongodb.com/master/core/write-concern/
     ///
     const stdx::optional<class write_concern>& write_concern() const;
 
@@ -80,7 +88,11 @@ class MONGOCXX_API insert {
     /// @param ordered
     ///   Whether or not the insert_many will be ordered.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/method/db.collection.insert/
+    /// @return
+    ///   A reference to the object on which this member function is being called.  This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/insert/
     ///
     insert& ordered(bool ordered);
 
@@ -89,7 +101,7 @@ class MONGOCXX_API insert {
     ///
     /// @return The current ordered value.
     ///
-    /// @see http://docs.mongodb.org/manual/reference/method/db.collection.insert/
+    /// @see https://docs.mongodb.com/master/reference/command/insert/
     ///
     const stdx::optional<bool>& ordered() const;
 

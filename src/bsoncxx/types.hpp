@@ -18,6 +18,7 @@
 #include <cstring>
 
 #include <bsoncxx/array/view.hpp>
+#include <bsoncxx/decimal128.hpp>
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/oid.hpp>
 #include <bsoncxx/stdx/string_view.hpp>
@@ -89,7 +90,7 @@ struct BSONCXX_API b_double {
     ///
     /// Conversion operator unwrapping a double
     ///
-    BSONCXX_INLINE operator double() {
+    BSONCXX_INLINE operator double() const {
         return value;
     }
 };
@@ -118,16 +119,14 @@ struct BSONCXX_API b_utf8 {
     template <typename T,
               typename std::enable_if<!std::is_same<b_utf8, typename std::decay<T>::type>::value,
                                       int>::type = 0>
-    BSONCXX_INLINE explicit b_utf8(T&& t)
-        : value(std::forward<T>(t)) {
-    }
+    BSONCXX_INLINE explicit b_utf8(T&& t) : value(std::forward<T>(t)) {}
 
     stdx::string_view value;
 
     ///
     /// Conversion operator unwrapping a string_view
     ///
-    BSONCXX_INLINE operator stdx::string_view() {
+    BSONCXX_INLINE operator stdx::string_view() const {
         return value;
     }
 };
@@ -152,7 +151,7 @@ struct BSONCXX_API b_document {
     ///
     /// Conversion operator unwrapping a document::view
     ///
-    BSONCXX_INLINE operator document::view() {
+    BSONCXX_INLINE operator document::view() const {
         return value;
     }
 
@@ -184,7 +183,7 @@ struct BSONCXX_API b_array {
     ///
     /// Conversion operator unwrapping an array::view
     ///
-    BSONCXX_INLINE operator array::view() {
+    BSONCXX_INLINE operator array::view() const {
         return value;
     }
 };
@@ -267,7 +266,7 @@ struct BSONCXX_API b_bool {
     ///
     /// Conversion operator unwrapping a bool
     ///
-    BSONCXX_INLINE operator bool() {
+    BSONCXX_INLINE operator bool() const {
         return value;
     }
 };
@@ -294,8 +293,7 @@ struct BSONCXX_API b_date {
     ///   Milliseconds since the system_clock epoch.
     ///
     BSONCXX_INLINE
-    explicit b_date(std::chrono::milliseconds value) : value(value) {
-    }
+    explicit b_date(std::chrono::milliseconds value) : value(value) {}
 
     ///
     /// Constructor for b_date
@@ -305,15 +303,14 @@ struct BSONCXX_API b_date {
     ///
     BSONCXX_INLINE
     explicit b_date(const std::chrono::system_clock::time_point& tp)
-        : value(std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch())) {
-    }
+        : value(std::chrono::duration_cast<std::chrono::milliseconds>(tp.time_since_epoch())) {}
 
     std::chrono::milliseconds value;
 
     ///
     /// Conversion operator unwrapping a int64_t
     ///
-    BSONCXX_INLINE operator int64_t() {
+    BSONCXX_INLINE operator int64_t() const {
         return value.count();
     }
 
@@ -327,7 +324,7 @@ struct BSONCXX_API b_date {
     ///
     /// Conversion operator unwrapping a time_point
     ///
-    BSONCXX_INLINE operator std::chrono::system_clock::time_point() {
+    BSONCXX_INLINE operator std::chrono::system_clock::time_point() const {
         return std::chrono::system_clock::time_point(
             std::chrono::duration_cast<std::chrono::system_clock::duration>(value));
     }
@@ -373,10 +370,9 @@ struct BSONCXX_API b_regex {
     /// @param options
     ///   The regex options
     ///
-    template <typename T, typename U>
-    BSONCXX_INLINE explicit b_regex(T&& regex, U&& options)
-        : regex(std::forward<T>(regex)), options(std::forward<U>(options)) {
-    }
+    template <typename T, typename U = stdx::string_view>
+    BSONCXX_INLINE explicit b_regex(T&& regex, U&& options = U{})
+        : regex(std::forward<T>(regex)), options(std::forward<U>(options)) {}
 
     stdx::string_view regex;
     stdx::string_view options;
@@ -428,16 +424,14 @@ struct BSONCXX_API b_code {
     template <typename T,
               typename std::enable_if<!std::is_same<b_code, typename std::decay<T>::type>::value,
                                       int>::type = 0>
-    BSONCXX_INLINE explicit b_code(T&& t)
-        : code(std::forward<T>(t)) {
-    }
+    BSONCXX_INLINE explicit b_code(T&& t) : code(std::forward<T>(t)) {}
 
     stdx::string_view code;
 
     ///
     /// Conversion operator unwrapping a string_view
     ///
-    BSONCXX_INLINE operator stdx::string_view() {
+    BSONCXX_INLINE operator stdx::string_view() const {
         return code;
     }
 };
@@ -469,16 +463,14 @@ struct BSONCXX_API b_symbol {
     template <typename T,
               typename std::enable_if<!std::is_same<b_symbol, typename std::decay<T>::type>::value,
                                       int>::type = 0>
-    BSONCXX_INLINE explicit b_symbol(T&& t)
-        : symbol(std::forward<T>(t)) {
-    }
+    BSONCXX_INLINE explicit b_symbol(T&& t) : symbol(std::forward<T>(t)) {}
 
     stdx::string_view symbol;
 
     ///
     /// Conversion operator unwrapping a string_view
     ///
-    BSONCXX_INLINE operator stdx::string_view() {
+    BSONCXX_INLINE operator stdx::string_view() const {
         return symbol;
     }
 };
@@ -509,8 +501,7 @@ struct BSONCXX_API b_codewscope {
     ///
     template <typename T, typename U>
     BSONCXX_INLINE explicit b_codewscope(T&& code, U&& scope)
-        : code(std::forward<T>(code)), scope(std::forward<U>(scope)) {
-    }
+        : code(std::forward<T>(code)), scope(std::forward<U>(scope)) {}
 
     stdx::string_view code;
     document::view scope;
@@ -536,7 +527,7 @@ struct BSONCXX_API b_int32 {
     ///
     /// Conversion operator unwrapping a int32_t
     ///
-    BSONCXX_INLINE operator int32_t() {
+    BSONCXX_INLINE operator int32_t() const {
         return value;
     }
 };
@@ -584,7 +575,7 @@ struct BSONCXX_API b_int64 {
     ///
     /// Conversion operator unwrapping a int64_t
     ///
-    BSONCXX_INLINE operator int64_t() {
+    BSONCXX_INLINE operator int64_t() const {
         return value;
     }
 };
@@ -595,6 +586,36 @@ struct BSONCXX_API b_int64 {
 /// @relatesalso b_int64
 ///
 BSONCXX_INLINE bool operator==(const b_int64& lhs, const b_int64& rhs) {
+    return lhs.value == rhs.value;
+}
+
+///
+/// A BSON Decimal128 value.
+///
+struct BSONCXX_API b_decimal128 {
+    static constexpr auto type_id = type::k_decimal128;
+
+    decimal128 value;
+
+    ///
+    /// Constructor for b_decimal128.
+    ///
+    /// @param value
+    ///   The value to wrap.
+    ///
+    template <
+        typename T,
+        typename std::enable_if<!std::is_same<b_decimal128, typename std::decay<T>::type>::value,
+                                int>::type = 0>
+    BSONCXX_INLINE explicit b_decimal128(T&& t) : value(std::forward<T>(t)) {}
+};
+
+///
+/// free function comparator for b_decimal128
+///
+/// @relatesalso b_decimal128
+///
+BSONCXX_INLINE bool operator==(const b_decimal128& lhs, const b_decimal128& rhs) {
     return lhs.value == rhs.value;
 }
 

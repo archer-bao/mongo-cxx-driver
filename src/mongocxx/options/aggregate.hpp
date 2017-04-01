@@ -17,7 +17,7 @@
 #include <chrono>
 #include <cstdint>
 
-#include <bsoncxx/document/view.hpp>
+#include <bsoncxx/document/view_or_value.hpp>
 #include <bsoncxx/stdx/optional.hpp>
 #include <mongocxx/read_preference.hpp>
 #include <mongocxx/stdx.hpp>
@@ -40,12 +40,20 @@ class MONGOCXX_API aggregate {
     /// @param allow_disk_use
     ///   Whether or not to allow disk use.
     ///
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
     aggregate& allow_disk_use(bool allow_disk_use);
 
     ///
     /// Retrieves the current allow_disk_use setting.
     ///
     /// @return Whether disk use is allowed.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
     ///
     const stdx::optional<bool>& allow_disk_use() const;
 
@@ -55,6 +63,12 @@ class MONGOCXX_API aggregate {
     /// @param batch_size
     ///   The size of the batches to request.
     ///
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
     aggregate& batch_size(std::int32_t batch_size);
 
     ///
@@ -62,7 +76,33 @@ class MONGOCXX_API aggregate {
     ///
     /// @return The current batch size.
     ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
     const stdx::optional<std::int32_t>& batch_size() const;
+
+    ///
+    /// Sets the collation for this operation.
+    ///
+    /// @param collation
+    ///   The new collation.
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
+    aggregate& collation(bsoncxx::document::view_or_value collation);
+
+    ///
+    /// Retrieves the current collation for this operation.
+    ///
+    /// @return
+    ///   The current collation.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
+    const stdx::optional<bsoncxx::document::view_or_value>& collation() const;
 
     ///
     /// Sets the maximum amount of time for this operation to run server-side in milliseconds.
@@ -70,7 +110,11 @@ class MONGOCXX_API aggregate {
     /// @param max_time
     ///   The max amount of time (in milliseconds).
     ///
-    /// @see http://docs.mongodb.org/manual/reference/operator/meta/maxTimeMS
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
     ///
     aggregate& max_time(std::chrono::milliseconds max_time);
 
@@ -80,7 +124,7 @@ class MONGOCXX_API aggregate {
     /// @return
     ///   The current max time (in milliseconds).
     ///
-    /// @see http://docs.mongodb.org/manual/reference/operator/meta/maxTimeMS
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
     ///
     const stdx::optional<std::chrono::milliseconds>& max_time() const;
 
@@ -93,7 +137,11 @@ class MONGOCXX_API aggregate {
     ///
     /// If this optional setting is not engaged client-side, the server default will be used.
     ///
-    /// @param use_cursor whether or not to use a cursor
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
     ///
     aggregate& use_cursor(bool use_cursor);
 
@@ -102,6 +150,8 @@ class MONGOCXX_API aggregate {
     ///
     /// @return the current use_cursor setting
     ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
     const stdx::optional<bool>& use_cursor() const;
 
     ///
@@ -109,7 +159,11 @@ class MONGOCXX_API aggregate {
     ///
     /// @param rp the new read_preference
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
     ///
     aggregate& read_preference(class read_preference rp);
 
@@ -118,7 +172,7 @@ class MONGOCXX_API aggregate {
     ///
     /// @return the current read_preference
     ///
-    /// @see http://docs.mongodb.org/manual/core/read-preference/
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
     ///
     const stdx::optional<class read_preference>& read_preference() const;
 
@@ -127,6 +181,10 @@ class MONGOCXX_API aggregate {
     ///
     /// @param bypass_document_validation whether or not to bypass validation.
     ///
+    /// @return
+    ///   A reference to the object on which this member function is being called. This facilitates
+    ///   method chaining.
+    ///
     aggregate& bypass_document_validation(bool bypass_document_validation);
 
     ///
@@ -134,11 +192,14 @@ class MONGOCXX_API aggregate {
     ///
     /// @return the current bypass_document_validation setting
     ///
+    /// @see https://docs.mongodb.com/master/reference/command/aggregate/
+    ///
     const stdx::optional<bool>& bypass_document_validation() const;
 
    private:
     stdx::optional<bool> _allow_disk_use;
     stdx::optional<std::int32_t> _batch_size;
+    stdx::optional<bsoncxx::document::view_or_value> _collation;
     stdx::optional<std::chrono::milliseconds> _max_time;
     stdx::optional<bool> _use_cursor;
     stdx::optional<class read_preference> _read_preference;

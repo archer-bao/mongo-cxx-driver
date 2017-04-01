@@ -18,8 +18,8 @@
 #include <bsoncxx/json.hpp>
 
 #include <mongocxx/client.hpp>
-#include <mongocxx/options/find.hpp>
 #include <mongocxx/instance.hpp>
+#include <mongocxx/options/find.hpp>
 #include <mongocxx/uri.hpp>
 
 using bsoncxx::builder::stream::document;
@@ -30,6 +30,9 @@ using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::finalize;
 
 int main(int, char**) {
+    // The mongocxx::instance constructor and destructor initialize and shut down the driver,
+    // respectively. Therefore, a mongocxx::instance must be created before using the driver and
+    // must remain alive for as long as the driver is in use.
     mongocxx::instance inst{};
     mongocxx::client conn{mongocxx::uri{}};
 
@@ -49,7 +52,8 @@ int main(int, char**) {
     {
         // @begin: cpp-query-top-level-field
         auto cursor = db["restaurants"].find(document{} << "borough"
-                                                        << "Manhattan" << finalize);
+                                                        << "Manhattan"
+                                                        << finalize);
 
         for (auto&& doc : cursor) {
             std::cout << bsoncxx::to_json(doc) << std::endl;

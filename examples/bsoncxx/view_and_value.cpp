@@ -39,10 +39,10 @@ int main(int, char**) {
     using builder::basic::sub_array;
 
     auto doc = builder::basic::document{};
-    doc.append(kvp("team", "platforms"), kvp("id", types::b_oid{oid()}),
-               kvp("members", [](sub_array sa) {
-                   sa.append("tyler", "jason", "drew", "sam", "ernie", "john", "mark", "crystal");
-               }));
+    doc.append(
+        kvp("team", "platforms"), kvp("id", types::b_oid{oid()}), kvp("members", [](sub_array sa) {
+            sa.append("tyler", "jason", "drew", "sam", "ernie", "john", "mark", "crystal");
+        }));
 
     // document::value is an owning bson document conceptually similar to string.
     document::value value{doc.extract()};

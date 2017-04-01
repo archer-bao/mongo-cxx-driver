@@ -14,8 +14,8 @@
 
 #pragma once
 
-#include <mongocxx/options/bulk_write.hpp>
 #include <mongocxx/model/write.hpp>
+#include <mongocxx/options/bulk_write.hpp>
 
 #include <mongocxx/config/prelude.hpp>
 
@@ -35,8 +35,8 @@ class collection;
 /// method. Options that you would typically specify for individual write operations (such as write
 /// concern) are instead specified for the aggregate operation.
 ///
-/// @see http://docs.mongodb.org/manual/core/write-operations/
-/// @see http://docs.mongodb.org/manual/core/bulk-write-operations/
+/// @see https://docs.mongodb.com/master/core/crud/
+/// @see https://docs.mongodb.com/master/core/bulk-write-operations/
 ///
 class MONGOCXX_API bulk_write {
    public:
@@ -82,6 +82,8 @@ class MONGOCXX_API bulk_write {
     ///     - model::replace_one
     ///     - model::update_many
     ///     - model::update_one
+    ///
+    /// @throws mongocxx::logic_error if the given operation is invalid.
     ///
     void append(const model::write& operation);
 

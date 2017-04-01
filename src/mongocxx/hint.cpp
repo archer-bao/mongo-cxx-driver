@@ -16,15 +16,21 @@
 
 #include <bsoncxx/stdx/make_unique.hpp>
 
-#include <mongocxx/config/private/prelude.hpp>
+#include <mongocxx/config/private/prelude.hh>
 
 namespace mongocxx {
 MONGOCXX_INLINE_NAMESPACE_BEGIN
 
-hint::hint(bsoncxx::document::view_or_value index) : _index_doc(std::move(index)) {
-}
+hint::hint(bsoncxx::document::view_or_value index) : _index_doc(std::move(index)) {}
 
-hint::hint(bsoncxx::string::view_or_value index) : _index_string(std::move(index)) {
+hint::hint(bsoncxx::string::view_or_value index) : _index_string(std::move(index)) {}
+
+bsoncxx::types::value hint::to_value() const {
+    if (_index_doc) {
+        return bsoncxx::types::value{bsoncxx::types::b_document{_index_doc->view()}};
+    }
+
+    return bsoncxx::types::value{bsoncxx::types::b_utf8{*_index_string}};
 }
 
 bsoncxx::document::value hint::to_document() const {
@@ -41,35 +47,35 @@ bsoncxx::document::value hint::to_document() const {
     return doc.extract();
 }
 
-bool operator==(const hint& index_hint, std::string index) {
+bool MONGOCXX_CALL operator==(const hint& index_hint, std::string index) {
     return ((index_hint._index_string) && (*(index_hint._index_string) == index));
 }
 
-bool operator==(std::string index, const hint& index_hint) {
+bool MONGOCXX_CALL operator==(std::string index, const hint& index_hint) {
     return index_hint == index;
 }
 
-bool operator!=(const hint& index_hint, std::string index) {
+bool MONGOCXX_CALL operator!=(const hint& index_hint, std::string index) {
     return !(index_hint == index);
 }
 
-bool operator!=(std::string index, const hint& index_hint) {
+bool MONGOCXX_CALL operator!=(std::string index, const hint& index_hint) {
     return !(index_hint == index);
 }
 
-bool operator==(const hint& index_hint, bsoncxx::document::view index) {
+bool MONGOCXX_CALL operator==(const hint& index_hint, bsoncxx::document::view index) {
     return index_hint._index_doc && index_hint._index_doc->view() == index;
 }
 
-bool operator==(bsoncxx::document::view index, const hint& index_hint) {
+bool MONGOCXX_CALL operator==(bsoncxx::document::view index, const hint& index_hint) {
     return index_hint == index;
 }
 
-bool operator!=(const hint& index_hint, bsoncxx::document::view index) {
+bool MONGOCXX_CALL operator!=(const hint& index_hint, bsoncxx::document::view index) {
     return !(index_hint == index);
 }
 
-bool operator!=(bsoncxx::document::view index, const hint& index_hint) {
+bool MONGOCXX_CALL operator!=(bsoncxx::document::view index, const hint& index_hint) {
     return !(index_hint == index);
 }
 
